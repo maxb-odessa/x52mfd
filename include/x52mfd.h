@@ -10,7 +10,7 @@
 #include <libx52/libx52.h>
 #endif
 
-typedef int (*x52mfd_func_t)(void);
+typedef int (*x52mfd_func_t)(const char **errstr);
 
 
 

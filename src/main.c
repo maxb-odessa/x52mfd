@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     // modules dir is optional
     if (modules_dir == NULL) {
         fprintf(stderr, "Warning: no modules path specified, using current dir\n");
-        modules_dir = "./";
+        modules_dir = X52MFD_MODULES_DIR;
     }
 
     // fall into background if requested
@@ -117,12 +117,13 @@ int main(int argc, char *argv[]) {
     x52mfd_finish = dlsym(x52mod, "x52mfd_mod_finish");
 
     // execute module functions in order
-    if (x52mfd_init == NULL || x52mfd_init())
-        fprintf(stderr, "Failed to init module %s\n", module_path);
-    else if (x52mfd_run == NULL || x52mfd_run())
-        fprintf(stderr, "Failed to run module %s\n", module_path);
-    else if (x52mfd_finish == NULL || x52mfd_finish())
-        fprintf(stderr, "Failed to finish module %s\n", module_path);
+    const char *errstr = NULL;
+    if (x52mfd_init == NULL || x52mfd_init(&errstr))
+        fprintf(stderr, "Failed to init module %s: %s\n", module_path, errstr);
+    else if (x52mfd_run == NULL || x52mfd_run(&errstr))
+        fprintf(stderr, "Failed to run module %s: %s\n", module_path, errstr);
+    else if (x52mfd_finish == NULL || x52mfd_finish(&errstr))
+        fprintf(stderr, "Failed to finish module %s: %s\n", module_path, errstr);
 
     // we're done
     dlclose(x52mod);
