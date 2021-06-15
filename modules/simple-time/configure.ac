@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_INIT([simple-time], [0.0.1], [maxb@tutamail.com])
 AC_CONFIG_SRCDIR([simple-time.c])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE

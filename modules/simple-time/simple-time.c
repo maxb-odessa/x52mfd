@@ -2,6 +2,8 @@
 #include <time.h>
 #include <stdio.h>
 
+#include "x52mfd.h"
+
 
 int x52mfd_mod_init(void) {
     puts("INITED");

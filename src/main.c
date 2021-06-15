@@ -1,3 +1,14 @@
+/*
+   This is a simple proggie to just open shared object (game related module) 
+   and execute 3 of its functions in order:
+   x52mfd_mod_init()
+   x52mfd_mod_run()
+   x52mfd_mod_finish()
+
+   The module will be searched in specified dir (by -p flag) or by X52MFD_MODULES_DIR env var.
+
+   Optionally the proggie may fall into background.
+   */
 
 #include <stdio.h>
 #include <getopt.h>
@@ -11,6 +22,8 @@
 
 #include "x52mfd.h"
 
+
+// just a help printer
 void print_help(void) {
     puts(
             "Options are:\n"
@@ -22,11 +35,14 @@ void print_help(void) {
         );
 }
 
+// fatal errors catcher and reporter
 void fatality(int really, char *reason) {
     if (really)
         error(1, errno, reason);
 }
 
+
+// the main part
 int main(int argc, char *argv[]) {
     char *opts = "hdp:m:";
     int opt;
@@ -40,6 +56,7 @@ int main(int argc, char *argv[]) {
     x52mfd_func_t x52mfd_finish;
 
 
+    // parse cmdline options
     while ((opt = getopt(argc, argv, opts)) != -1) {
         switch (opt) {
             case 'd':
@@ -60,36 +77,46 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // module name is mandatory
     if (module_name == NULL) {
         fprintf(stderr, "Error: you must specify module to load\n");
         return 1;
     }
 
 
+    // modules dir is optional
     if (modules_dir == NULL) {
         fprintf(stderr, "Warning: no modules path specified, using current dir\n");
         modules_dir = "./";
     }
 
+    // fall into background if requested
     if (daemonize) {
         pid_t pid = fork();
         fatality(pid < 0, "fork() failed");
         if (pid > 0)
             return 0;
+        close(0);
+        close(1);
+        close(2);
         setsid();
     }
 
+    // compose full path to loadable module
     module_path = calloc(1, strlen(modules_dir) + strlen(module_name) + 5); // 5 = "/.so\0"
     fatality(module_path == NULL, "calloc() failed");
     sprintf(module_path, "%s/%s.so", modules_dir, module_name);
 
+    // try to open module
     x52mod = dlopen(module_path, RTLD_LAZY|RTLD_GLOBAL);
     fatality(x52mod == NULL, module_path);
 
+    // search for mandatory module functions
     x52mfd_init = dlsym(x52mod, "x52mfd_mod_init");
     x52mfd_run = dlsym(x52mod, "x52mfd_mod_run");
     x52mfd_finish = dlsym(x52mod, "x52mfd_mod_finish");
 
+    // execute module functions in order
     if (x52mfd_init == NULL || x52mfd_init())
         fprintf(stderr, "Failed to init module %s\n", module_path);
     else if (x52mfd_run == NULL || x52mfd_run())
@@ -97,6 +124,7 @@ int main(int argc, char *argv[]) {
     else if (x52mfd_finish == NULL || x52mfd_finish())
         fprintf(stderr, "Failed to finish module %s\n", module_path);
 
+    // we're done
     dlclose(x52mod);
 
     return 0;
