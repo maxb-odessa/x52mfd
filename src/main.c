@@ -31,7 +31,9 @@ void print_help(void) {
             "   -d          fall in background\n"
             "   -p <path>   search 'path' for loadable modules\n"
             "   -m <name>   load and use module 'name.so' from dir 'path'\n"
-            "Note: '-p' option can also be set by env var 'X52MFD_MODULES_DIR'"
+            "Notes:\n"
+            "   '-p' option can also be set by env var 'X52MFD_MODULES_DIR'"
+            "   '-m' option can also be set by env var 'X52MFD_MODULE'"
         );
 }
 
@@ -47,13 +49,11 @@ int main(int argc, char *argv[]) {
     char *opts = "hdp:m:";
     int opt;
     char *modules_dir = getenv("X52MFD_MODULES_DIR");
-    char *module_name = NULL;
+    char *module_name = getenv("X52MFD_MODULE");
     char *module_path;
     int daemonize = 0;
     void *x52mod;
-    x52mfd_func_t x52mfd_init;
-    x52mfd_func_t x52mfd_run;
-    x52mfd_func_t x52mfd_finish;
+    x52mfd_func_t mod_init,mod_run, mod_finish;
 
 
     // parse cmdline options
@@ -85,10 +85,8 @@ int main(int argc, char *argv[]) {
 
 
     // modules dir is optional
-    if (modules_dir == NULL) {
-        fprintf(stderr, "Warning: no modules path specified, using current dir\n");
+    if (modules_dir == NULL)
         modules_dir = X52MFD_MODULES_DIR;
-    }
 
     // fall into background if requested
     if (daemonize) {
@@ -112,17 +110,17 @@ int main(int argc, char *argv[]) {
     fatality(x52mod == NULL, module_path);
 
     // search for mandatory module functions
-    x52mfd_init = dlsym(x52mod, "x52mfd_mod_init");
-    x52mfd_run = dlsym(x52mod, "x52mfd_mod_run");
-    x52mfd_finish = dlsym(x52mod, "x52mfd_mod_finish");
+    mod_init = dlsym(x52mod, XSTR(X52MFD_INIT_FUNC));
+    mod_run = dlsym(x52mod, XSTR(X52MFD_RUN_FUNC));
+    mod_finish = dlsym(x52mod, XSTR(X52MFD_FINISH_FUNC));
 
     // execute module functions in order
     const char *errstr = NULL;
-    if (x52mfd_init == NULL || x52mfd_init(&errstr))
+    if (mod_init == NULL || mod_init(&errstr))
         fprintf(stderr, "Failed to init module %s: %s\n", module_path, errstr);
-    else if (x52mfd_run == NULL || x52mfd_run(&errstr))
+    else if (mod_run == NULL || mod_run(&errstr))
         fprintf(stderr, "Failed to run module %s: %s\n", module_path, errstr);
-    else if (x52mfd_finish == NULL || x52mfd_finish(&errstr))
+    else if (mod_finish == NULL || mod_finish(&errstr))
         fprintf(stderr, "Failed to finish module %s: %s\n", module_path, errstr);
 
     // we're done

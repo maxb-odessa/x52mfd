@@ -15,11 +15,16 @@ AC_PROG_CC
 LT_INIT
 
 # Checks for libraries.
+PKG_CHECK_MODULES([PCRE], [libpcre >= 8.0.0], [], AC_MSG_ERROR([pcre >= 8.0.0 required]))
+
+
 
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+
+
 
 AC_OUTPUT
