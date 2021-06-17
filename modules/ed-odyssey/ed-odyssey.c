@@ -3,13 +3,31 @@
 
 #include "ed-odyssey.h"
 
-libx52_device *x52dev;
+static libx52_device *x52dev;
+static ed_action_t *actions;
 
+#define ED_ACTIONS_FILE_VAR "ED_ODYSSEY_ACTIONS_FILE"
+#define ED_JOURNAL_DIR_VAR  "ED_JOURNAL_DIR" 
 
-int mod_ed_setup(const char **err) {
-
+static int mod_ed_setup(const char **err) {
     int rc;
+    char *actions_file = getenv(ED_ACTIONS_FILE_VAR);
+    char *journal_dir = getenv(ED_JOURNAL_DIR_VAR);
 
+
+    // read and parse actions file (take its location from env var)
+    if (! actions_file) {
+        *err = "Env var '" ED_ACTIONS_FILE_VAR "' not set";
+        return 1;
+    }
+
+    if (parse_actions_file(actions_file, &actions, err))
+        return 1;
+
+    // search for commander's journal and try to open it
+
+
+    // init x52 and connect to it
     rc = libx52_init(&x52dev);
     if (rc != LIBX52_SUCCESS) {
         *err = libx52_strerror(rc);
@@ -25,7 +43,7 @@ int mod_ed_setup(const char **err) {
     return 0;
 }
 
-int mod_ed_loop(const char **err) {
+static int mod_ed_loop(const char **err) {
 
     ed_led_action_t *action;
 
@@ -61,7 +79,7 @@ int mod_ed_loop(const char **err) {
     return 0;
 }
 
-int mod_ed_done(const char **err) {
+static int mod_ed_done(const char **err) {
 
 
     // close file

@@ -94,9 +94,6 @@ int main(int argc, char *argv[]) {
         fatality(pid < 0, "fork() failed");
         if (pid > 0)
             return 0;
-        close(0);
-        close(1);
-        close(2);
         setsid();
     }
 
@@ -109,7 +106,7 @@ int main(int argc, char *argv[]) {
     x52mod = dlopen(module_path, RTLD_LAZY|RTLD_GLOBAL);
     fatality(x52mod == NULL, module_path);
 
-    // search for mandatory module functions
+    // search for module functions, any of them may be absent
     mod_init = dlsym(x52mod, XSTR(X52MFD_INIT_FUNC));
     mod_run = dlsym(x52mod, XSTR(X52MFD_RUN_FUNC));
     mod_finish = dlsym(x52mod, XSTR(X52MFD_FINISH_FUNC));

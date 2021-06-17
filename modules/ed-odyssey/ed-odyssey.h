@@ -29,9 +29,10 @@ typedef struct {
 } ed_led_state_t;
 
 // led and its state action
-typedef struct {
-    ed_led_type_t  *led;
-    ed_led_state_t *state;
+typedef struct ed_led_action {
+    ed_led_type_t           *led;
+    ed_led_state_t          *state;
+    struct ed_led_action    *next;
 } ed_led_action_t;
 
 // these should be called within a module
@@ -39,6 +40,11 @@ ed_led_action_t *ed_led_parse_action(char *ledname, char *ledstate);
 int ed_led_set(libx52_device *x52dev, ed_led_action_t *action, char *data);
 int ed_led_apply(libx52_device *x52dev);
 
+// events actions
+typedef struct ed_action {
+    pcre                *regex;
+    ed_led_action_t     *actions;
+    struct ed_action    *next;
+} ed_action_t;
 
-
-
+int parse_actions_file(char *fname, ed_action_t **actions, const char **err);

@@ -1,13 +1,5 @@
 
 {
-    "config" :   {
-        "journal_dir" : "~/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous",
-        "cmdr" : "vessae"
-    },
-
-
-    "events" : {
-
         "FSSDiscoveries\":.+\"Bodies\":.+\"NonBodies\":" : {
             "MFD"  : "20%",
             "LEDS" : "50%",
@@ -17,7 +9,7 @@
             "A"    : "red",
             "T1"   : "off",
             "FIRE" : "green",
-            "BLINK": "on"
+            "LEDS" : "blink"
         },
 
         "\"SystemName\":.+\"StarClass\":" : {
@@ -25,9 +17,7 @@
             "MFD1" : "",
             "MFD2" : "$SystemName ($StarClass)",
             "POV"  : "amber",
-            "BLINK": "off"
+            "LEDS" : "noblink"
         }
-
-    }
 }
 
