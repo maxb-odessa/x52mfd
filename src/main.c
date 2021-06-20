@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
     int daemonize = 0;
     void *x52mod;
     x52mfd_func_t mod_init,mod_run, mod_finish;
+    x52mfd_t x52mfd = { .dev = NULL, .err = NULL };
 
 
     // parse cmdline options
@@ -83,7 +84,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
     // modules dir is optional
     if (modules_dir == NULL)
         modules_dir = X52MFD_MODULES_DIR;
@@ -111,17 +111,20 @@ int main(int argc, char *argv[]) {
     mod_run = dlsym(x52mod, XSTR(X52MFD_RUN_FUNC));
     mod_finish = dlsym(x52mod, XSTR(X52MFD_FINISH_FUNC));
 
+    // create joy object and run joy reconnector
+    fatality(x52mfd_init(&x52mfd), x52mfd.err);
+
     // execute module functions in order
-    const char *errstr = NULL;
-    if (mod_init == NULL || mod_init(&errstr))
-        fprintf(stderr, "Failed to init module %s: %s\n", module_path, errstr);
-    else if (mod_run == NULL || mod_run(&errstr))
-        fprintf(stderr, "Failed to run module %s: %s\n", module_path, errstr);
-    else if (mod_finish == NULL || mod_finish(&errstr))
-        fprintf(stderr, "Failed to finish module %s: %s\n", module_path, errstr);
+    if (mod_init == NULL || mod_init(&x52mfd))
+        fprintf(stderr, "Failed to init module %s: %s\n", module_path, x52mfd.err);
+    else if (mod_run == NULL || mod_run(&x52mfd))
+        fprintf(stderr, "Failed to run module %s: %s\n", module_path, x52mfd.err);
+    else if (mod_finish == NULL || mod_finish(&x52mfd))
+        fprintf(stderr, "Failed to finish module %s: %s\n", module_path, x52mfd.err);
 
     // we're done
-    dlclose(x52mod);
+    x52mfd_disconnect(&x52mfd);
+    dlclose(&x52mod);
 
     return 0;
 }

@@ -6,47 +6,34 @@
 
 #include "x52mfd.h"
 
-libx52_device *x52dev;
-
-int mod_st_setup(const char **err) {
-    int rc;
-
-    rc = libx52_init(&x52dev);
-    if (rc != LIBX52_SUCCESS) {
-        *err = libx52_strerror(rc);
-        return 1;
-    }
-
-    rc = libx52_connect(x52dev);
-    if (rc != LIBX52_SUCCESS) {
-        *err = libx52_strerror(rc);
-        return 1;
-    }
-
+int mod_st_setup(x52mfd_t *x52mfd) {
     return 0;
 }
 
-int mod_st_loop(const char **err) {
+int mod_st_loop(x52mfd_t *x52mfd) {
     char tbuf[16 + 1];
     time_t now;
     struct tm *tm;
 
     memset(tbuf, '-', sizeof(tbuf));
-    libx52_set_text(x52dev, 2, tbuf, sizeof(tbuf));
+    x52mfd_can(x52mfd);
+    libx52_set_text(x52mfd->dev, 2, tbuf, sizeof(tbuf));
 
     while (1) {
         now = time(NULL);
         tm = localtime(&now);
 
+        x52mfd_can(x52mfd);
+
         strftime(tbuf, sizeof(tbuf) - 1, "%d %B %Y", tm);
-        libx52_set_text(x52dev, 0, tbuf, strlen(tbuf));
+        libx52_set_text(x52mfd->dev, 0, tbuf, strlen(tbuf));
 
         strftime(tbuf, sizeof(tbuf) - 1, "%H:%M:%S", tm);
-        libx52_set_text(x52dev, 1, tbuf, strlen(tbuf));
+        libx52_set_text(x52mfd->dev, 1, tbuf, strlen(tbuf));
 
-        libx52_set_clock(x52dev, now, 0);
+        libx52_set_clock(x52mfd->dev, now, 0);
 
-        libx52_update(x52dev);
+        libx52_update(x52mfd->dev);
 
         sleep(1);
     }
@@ -55,8 +42,6 @@ int mod_st_loop(const char **err) {
 }
 
 int mod_st_done(const char **err) {
-    libx52_disconnect(x52dev);
-    libx52_exit(x52dev);
     return 0;
 }
 

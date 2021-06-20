@@ -47,4 +47,4 @@ typedef struct ed_action {
     struct ed_action    *next;
 } ed_action_t;
 
-int parse_actions_file(char *fname, ed_action_t **actions, const char **err);
+int parse_actions_file(char *fname, ed_action_t **actions, char **err);

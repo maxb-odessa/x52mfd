@@ -19,6 +19,12 @@ AC_PROG_CC
 LT_INIT([dlopen])
 
 # Checks for libraries.
+#AX_PTHREAD
+#LIBS="$PTHREAD_LIBS $LIBS"
+#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+#CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+#CC="$PTHREAD_CC"
+#CXX="$PTHREAD_CXX"
 
 # Checks for header files.
 
@@ -27,10 +33,7 @@ LT_INIT([dlopen])
 # Checks for library functions.
 
 PKG_CHECK_MODULES([LIBX52], [libx52 >= 0.2.1], [], AC_MSG_ERROR([libx52 >= 0.2.1 required (get it here: https://github.com/nirenjan/x52pro-linux.git)]))
-AC_CHECK_HEADERS([libx52.h libx52/libx52.h])
 
-#AC_CONFIG_SUBDIRS([modules/ed-odyssey
-#                   modules/simple-time])
 
 AX_SUBDIRS_CONFIGURE([[modules/simple-time],[modules/ed-odyssey]],[],[[CFLAGS=-I${ac_top_srcdir}/include -I${ac_top_builddir}/include $LIBX52_CFLAGS],[]],[--libdir=${X52MFD_MODULES_DIR}],[])
 
