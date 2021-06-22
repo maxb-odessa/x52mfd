@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <unistd.h>
+#include <time.h>
 
 #include "ed-odyssey.h"
 
@@ -28,13 +30,45 @@ static int mod_ed_setup(x52mfd_t *x52mfd) {
     if (parse_patterns_file(patterns_file, &patterns))
         return 1;
 
-    // search for commander's journal and try to open it
-    // TODO
+    // prepare journal processor
+    if (journal_init(journal_dir))
+        return 1;
+
     return 0;
 }
 
 static int mod_ed_loop(x52mfd_t *x52mfd) {
+    char *journal_event;
+    ed_pattern_t *ed_pattern;
 
+    // prepare clock(s)
+    libx52_set_clock_format(x52mfd->dev, LIBX52_CLOCK_1, LIBX52_CLOCK_FORMAT_24HR);
+    libx52_set_date_format(x52mfd->dev, LIBX52_DATE_FORMAT_DDMMYY);
+
+    while (1) {
+
+        // sleep 1 sec
+        sleep(1);
+
+        // update date-time
+        libx52_set_clock(x52mfd->dev, time(NULL), 1);
+        ed_led_apply(x52mfd->dev);
+
+        journal_event = journal_get_event();
+        if (! journal_event)
+            continue;
+
+        // find event by pattern
+        ed_pattern = pattern_match_event(journal_event, patterns);
+        if (! ed_pattern)
+            continue;
+
+        // apply actions (parse event for MFD* if needed)
+
+    }
+
+
+#if 0
     ed_led_action_t *action;
 
     x52mfd_can(x52mfd);
@@ -67,7 +101,7 @@ static int mod_ed_loop(x52mfd_t *x52mfd) {
     // do action
 
     ed_led_apply(x52mfd->dev);
-
+#endif
     return 0;
 }
 

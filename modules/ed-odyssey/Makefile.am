@@ -6,7 +6,7 @@ ed_odyssey_la_SOURCES	=	ed-odyssey.c	\
 							ed-odyssey.h	\
 							led_actions.c	\
 							patterns.c		\
-							events.c		\
+							journal.c		\
 							cJSON.h			\
 							cJSON.c
 

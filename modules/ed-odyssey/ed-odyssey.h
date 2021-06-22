@@ -50,3 +50,8 @@ typedef struct ed_pattern {
 
 // ???
 int parse_patterns_file(char *fname, ed_pattern_t **patterns);
+ed_pattern_t *pattern_match_event(char *event_string, ed_pattern_t *patterns);
+
+int journal_init(char *dir);
+char *journal_get_event(void);
+
