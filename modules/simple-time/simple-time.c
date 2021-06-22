@@ -41,7 +41,7 @@ int mod_st_loop(x52mfd_t *x52mfd) {
     return 0;
 }
 
-int mod_st_done(const char **err) {
+int mod_st_done(x52mfd_t *x52mfd) {
     return 0;
 }
 

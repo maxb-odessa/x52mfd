@@ -2,6 +2,7 @@
    libx52 related stuff and wrappers
    */
 
+#include <stdio.h>
 #include <unistd.h>
 
 #include "x52mfd.h"
@@ -25,7 +26,7 @@ int x52mfd_init(x52mfd_t *x52mfd) {
     // we can't go on without this
     rc = libx52_init(&x52mfd->dev);
     if (rc != LIBX52_SUCCESS) {
-        x52mfd->err = (char *)libx52_strerror(rc);
+        fprintf(stderr, "Failed to init libx52: %s\n", libx52_strerror(rc));
         return 1;
     }
 

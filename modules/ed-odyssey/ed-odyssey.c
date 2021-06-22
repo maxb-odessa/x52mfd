@@ -3,28 +3,33 @@
 
 #include "ed-odyssey.h"
 
-static ed_action_t *actions;
+#define ED_PATTERNS_FILE_VAR "ED_ODYSSEY_PATTERNS_FILE"
+#define ED_JOURNAL_DIR_VAR   "ED_JOURNAL_DIR" 
 
-#define ED_ACTIONS_FILE_VAR "ED_ODYSSEY_ACTIONS_FILE"
-#define ED_JOURNAL_DIR_VAR  "ED_JOURNAL_DIR" 
+static ed_pattern_t *patterns;
 
 static int mod_ed_setup(x52mfd_t *x52mfd) {
-    char *actions_file = getenv(ED_ACTIONS_FILE_VAR);
+    char *patterns_file = getenv(ED_PATTERNS_FILE_VAR);
     char *journal_dir = getenv(ED_JOURNAL_DIR_VAR);
 
 
-    // read and parse actions file (take its location from env var)
-    if (! actions_file) {
-        x52mfd->err = "Env var '" ED_ACTIONS_FILE_VAR "' not set";
+    // check for required paths
+    if (! patterns_file) {
+        fprintf(stderr,"Env var '" ED_PATTERNS_FILE_VAR "' not set\n");
         return 1;
     }
 
-    if (parse_actions_file(actions_file, &actions, &x52mfd->err))
+    if (! journal_dir) {
+        fprintf(stderr, "Env var '" ED_JOURNAL_DIR_VAR "' not set\n");
+        return 1;
+    }
+
+    // read and parse actions file
+    if (parse_patterns_file(patterns_file, &patterns))
         return 1;
 
     // search for commander's journal and try to open it
-
-
+    // TODO
     return 0;
 }
 
@@ -71,7 +76,7 @@ static int mod_ed_done(x52mfd_t *x52mfd) {
 
     // close file
 
-    // restore joy state
+    // restore joy state(?)
 
     return 0;
 }

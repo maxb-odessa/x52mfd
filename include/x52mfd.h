@@ -9,7 +9,6 @@
 
 typedef struct {
     libx52_device   *dev;
-    char            *err;
 } x52mfd_t;
 
 

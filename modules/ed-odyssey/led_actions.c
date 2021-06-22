@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "ed-odyssey.h"
 
@@ -16,6 +17,9 @@ static int led_state(libx52_device *x52dev, int id, ed_led_state_t *state, char 
 typedef int (*cb_t)();
 
 static ed_led_type_t led_types[] = {
+    // general TBD
+    //{"USLEEP",   ED_LED_TYPE_NOLED, 0,                      (cb_t)mfd_usleep},
+    //{"APPLY",    ED_LED_TYPE_NOLED, 0,                      (cb_t)mfd_apply},
     // mfd lines
     {"MFD1",     ED_LED_TYPE_TEXT,  0,                      (cb_t)mfd_text},
     {"MFD2",     ED_LED_TYPE_TEXT,  1,                      (cb_t)mfd_text},
@@ -106,18 +110,24 @@ ed_led_action_t *ed_led_parse_action(char *ledname, char *ledstate) {
     ed_led_state_t *state = NULL;
 
     led = find_led_type(ledname);
-    if (!led)
+    if (!led) {
+        fprintf(stderr, "LED '%s' is not defined\n", ledname);
         return NULL;
+    }
 
     if (led->type != ED_LED_TYPE_TEXT) {
         state = find_led_state(ledstate);
-        if (!state)
+        if (!state) {
+            fprintf(stderr, "LED state '%s' not defined\n", ledstate);
             return NULL;
-        if (! (led->type & state->allowed_type))
+        }
+        if (! (led->type & state->allowed_type)) {
+            fprintf(stderr, "LED state '%s' is not defined for this LED type\n", ledstate);
             return NULL;
+        }
     }
 
-    action = malloc(sizeof(ed_led_action_t));
+    action = calloc(1, sizeof(ed_led_action_t));
     assert(action); 
     action->led = led;
     action->state = state;

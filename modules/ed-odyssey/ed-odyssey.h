@@ -40,11 +40,13 @@ ed_led_action_t *ed_led_parse_action(char *ledname, char *ledstate);
 int ed_led_set(libx52_device *x52dev, ed_led_action_t *action, char *data);
 int ed_led_apply(libx52_device *x52dev);
 
-// events actions
-typedef struct ed_action {
+// events patterns
+typedef struct ed_pattern {
     pcre                *regex;
     ed_led_action_t     *actions;
-    struct ed_action    *next;
-} ed_action_t;
+    struct ed_pattern   *next;
+} ed_pattern_t;
 
-int parse_actions_file(char *fname, ed_action_t **actions, char **err);
+
+// ???
+int parse_patterns_file(char *fname, ed_pattern_t **patterns);

@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     int daemonize = 0;
     void *x52mod;
     x52mfd_func_t mod_init,mod_run, mod_finish;
-    x52mfd_t x52mfd = { .dev = NULL, .err = NULL };
+    x52mfd_t x52mfd = { .dev = NULL };
 
 
     // parse cmdline options
@@ -112,15 +112,15 @@ int main(int argc, char *argv[]) {
     mod_finish = dlsym(x52mod, XSTR(X52MFD_FINISH_FUNC));
 
     // create joy object and run joy reconnector
-    fatality(x52mfd_init(&x52mfd), x52mfd.err);
+    fatality(x52mfd_init(&x52mfd), "libx52 init failed\n");
 
     // execute module functions in order
     if (mod_init == NULL || mod_init(&x52mfd))
-        fprintf(stderr, "Failed to init module %s: %s\n", module_path, x52mfd.err);
+        fprintf(stderr, "Failed to init module\n");
     else if (mod_run == NULL || mod_run(&x52mfd))
-        fprintf(stderr, "Failed to run module %s: %s\n", module_path, x52mfd.err);
+        fprintf(stderr, "Failed to run module\n");
     else if (mod_finish == NULL || mod_finish(&x52mfd))
-        fprintf(stderr, "Failed to finish module %s: %s\n", module_path, x52mfd.err);
+        fprintf(stderr, "Failed to finish module\n");
 
     // we're done
     x52mfd_disconnect(&x52mfd);
