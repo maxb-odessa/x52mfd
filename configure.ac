@@ -13,7 +13,7 @@ AC_DISABLE_STATIC
 
 X52MFD_MODULES_DIR="${ac_default_prefix}/lib/x52mfd"
 AC_DEFINE_UNQUOTED([X52MFD_MODULES_DIR], ["$X52MFD_MODULES_DIR"], [Location of shared modules])
-
+CFLAGS=" -g -ggdb -O0"
 # Checks for programs.
 AC_PROG_CC
 LT_INIT([dlopen])

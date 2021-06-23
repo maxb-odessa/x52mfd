@@ -22,7 +22,10 @@ typedef struct {
 
 // leds and mfd states
 typedef struct {
-    char    *name;
+    union {
+        char    *name;
+        char    *patt;
+    };
     int     allowed_type;
     int     state;
     int     (*callback)();
@@ -42,16 +45,22 @@ int ed_led_apply(libx52_device *x52dev);
 
 // events patterns
 typedef struct ed_pattern {
+    char                *string;
     pcre                *regex;
     ed_led_action_t     *actions;
+    char                **subst;
     struct ed_pattern   *next;
 } ed_pattern_t;
 
+extern int debug;
 
 // ???
 int parse_patterns_file(char *fname, ed_pattern_t **patterns);
 ed_pattern_t *pattern_match_event(char *event_string, ed_pattern_t *patterns);
+int pattern_apply_actions(x52mfd_t *x52mfd, ed_pattern_t *pattern, char *event_string);
 
 int journal_init(char *dir);
 char *journal_get_event(void);
+
+
 

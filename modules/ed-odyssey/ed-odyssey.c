@@ -47,61 +47,23 @@ static int mod_ed_loop(x52mfd_t *x52mfd) {
 
     while (1) {
 
-        // sleep 1 sec
-        sleep(1);
-
         // update date-time
         libx52_set_clock(x52mfd->dev, time(NULL), 1);
         ed_led_apply(x52mfd->dev);
 
-        journal_event = journal_get_event();
-        if (! journal_event)
-            continue;
+        while ((journal_event = journal_get_event())) {
 
-        // find event by pattern
-        ed_pattern = pattern_match_event(journal_event, patterns);
-        if (! ed_pattern)
-            continue;
+            // find event by pattern and apply it if found
+            ed_pattern = pattern_match_event(journal_event, patterns);
+            if (ed_pattern)
+                pattern_apply_actions(x52mfd, ed_pattern, journal_event);
+        }
 
-        // apply actions (parse event for MFD* if needed)
+        // sleep 1 sec
+        sleep(1);
 
     }
 
-
-#if 0
-    ed_led_action_t *action;
-
-    x52mfd_can(x52mfd);
-
-    action = ed_led_parse_action("MFD", "100%");
-    printf("%d\n", ed_led_set(x52mfd->dev, action, NULL));
-
-    action = ed_led_parse_action("LEDS", "blink");
-    printf("%d\n", ed_led_set(x52mfd->dev, action, NULL));
-
-    action = ed_led_parse_action("MFD1", "some undefined");
-    printf("%d\n", ed_led_set(x52mfd->dev, action, "AAAAAAAAAAA"));
-
-    action = ed_led_parse_action("A", "green");
-    printf("%d\n", ed_led_set(x52mfd->dev, action, NULL));
-
-
-    // find file
-
-    // open file
-
-    // watch file changes
-
-    // read line
-
-    // parse line
-
-    // search for action
-
-    // do action
-
-    ed_led_apply(x52mfd->dev);
-#endif
     return 0;
 }
 

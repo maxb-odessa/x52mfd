@@ -1,23 +1,38 @@
 
 {
-        "FSSDiscoveries\":.+\"Bodies\":.+\"NonBodies\":" : [
-            {"MFD"  : "20%"},
-            {"LEDS" : "50%"},
-            {"MFD1" : "Signals: $Bodies/$NonBodies"},
-            {"MFD2" : ""},
-            {"MFD3" : "____________"},
-            {"A"    : "red"},
-            {"T1"   : "off"},
-            {"FIRE" : "green"},
-            {"LEDS" : "blink"}
+
+
+        "\"event\":\"FSSDiscoveryScan\".+\"BodyCount\":([0-9]+), \"NonBodyCount\":([0-9]+)," : [
+            {"MFD3" : "Signals: $1/$2"}
         ],
 
-        "\"SystemName\":.+\"StarClass\":" : [
-            {"MFD"  : "0%"},
-            {"MFD1" : ""},
-            {"MFD2" : "$SystemName ($StarClass)"},
-            {"POV"  : "amber"},
-            {"LEDS" : "noblink"}
-        ]
+        "event\":\"FSDJump\", \"Taxi\":false," : [
+            {"LEDS" : "30%"},
+            {"MFD"  : "30%"},
+            {"LEDS" : "NOBLINK"}
+        ],
+
+        "\"event\":\"StartJump\", \"JumpType\":\"Hyperspace\", \"StarSystem\":\"(.+ .+) (.+)\",.+\"StarClass\":\"(\\w)\"" : [
+            {"MFD1" : ">$3,$2"}
+        ],
+
+        "\"event\":\"FSDTarget\", \"Name\":\"(.+ .+) (.+)\", .+\"StarClass\":\"(.+)\", \"RemainingJumpsInRoute\":(.+) " :[
+            {"MFD2" : "~$3,$2 ($4)"},
+            {"LEDS" : "5%"},
+            {"MFD"  : "5%"},
+            {"LEDS" : "BLINK"}
+        ],
+
+        "\"event\":\"Scan\", \"ScanType\":\"AutoScan\",.+\"BodyID\":0,.+\"StarSystem\":\"(.+ .+) (.+)\",.+\"StarType\":\"(.+)\", \"Sub" : [
+            {"MFD1" : "-$3,$2"}
+        ],
+
+
+
+
+
+
+
+        "No Last Coma! DUMMY-DuMmY-dummy" : []
 }
 
