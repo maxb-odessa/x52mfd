@@ -1,6 +1,10 @@
 
 {
-
+        "DEFAULT" : [
+            {"LEDS" : "30%"},
+            {"MFD"  : "30%s"},
+            {"LEDS" : "NOBLINK"}
+        ],
 
         "\"event\":\"FSSDiscoveryScan\".+\"BodyCount\":([0-9]+), \"NonBodyCount\":([0-9]+)," : [
             {"MFD3" : "Signals: $1/$2"}
@@ -8,29 +12,31 @@
 
         "event\":\"FSDJump\", \"Taxi\":false," : [
             {"LEDS" : "30%"},
-            {"MFD"  : "30%"},
-            {"LEDS" : "NOBLINK"}
+            {"MFD"  : "30%"}
         ],
 
         "\"event\":\"StartJump\", \"JumpType\":\"Hyperspace\", \"StarSystem\":\"(.+ .+) (.+)\",.+\"StarClass\":\"(\\w)\"" : [
-            {"MFD1" : ">$3,$2"}
+            {"MFD2" : "$3,$2"},
+            {"LEDS" : "0%"},
+            {"MFD"  : "5%"}
         ],
 
         "\"event\":\"FSDTarget\", \"Name\":\"(.+ .+) (.+)\", .+\"StarClass\":\"(.+)\", \"RemainingJumpsInRoute\":(.+) " :[
-            {"MFD2" : "~$3,$2 ($4)"},
-            {"LEDS" : "5%"},
-            {"MFD"  : "5%"},
-            {"LEDS" : "BLINK"}
+            {"MFD1" : "~$3,$2 ($4)"},
+            {"MFD3" : "No D-Scan made"}
         ],
 
         "\"event\":\"Scan\", \"ScanType\":\"AutoScan\",.+\"BodyID\":0,.+\"StarSystem\":\"(.+ .+) (.+)\",.+\"StarType\":\"(.+)\", \"Sub" : [
-            {"MFD1" : "-$3,$2"}
+            {"MFD2" : "$3,$2"}
         ],
 
+        "\"event\":\"DockingGranted\"," :[
+            {"LEDS" : "BLINK"}
+        ], 
 
-
-
-
+        "\"event\":\"Docked\"," : [
+            {"LEDS" : "NOBLINK"}
+        ],
 
 
         "No Last Coma! DUMMY-DuMmY-dummy" : []

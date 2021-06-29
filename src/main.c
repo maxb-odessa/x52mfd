@@ -34,7 +34,10 @@ void print_help(void) {
             "   -m <name>   load and use module 'name.so' from dir 'path'\n"
             "Notes:\n"
             "   '-p' option can also be set by env var 'X52MFD_MODULES_DIR'"
-            "   '-m' option can also be set by env var 'X52MFD_MODULE'"
+            "   '-m' option can also be set by env var 'X52MFD_MODULE'\n"
+            "Examples:\n"
+            "   x52mfd -p $HOME/.local/lib -m simple-time\n"
+            "   x52mfd -m ed-odyssey\n"
         );
 }
 

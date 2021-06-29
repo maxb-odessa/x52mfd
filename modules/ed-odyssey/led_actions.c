@@ -11,11 +11,10 @@ static int mfd_text(libx52_device *x52dev, int lineno, ed_led_state_t *DUMMY, ch
 }
 
 static int led_state(libx52_device *x52dev, int id, ed_led_state_t *state, char *DUMMY) {
-    return state->callback(x52dev, id, state->state);
-}
-
-static int leds_state(libx52_device *x52dev, int id, ed_led_state_t *state, char *DUMMY) {
-    return state->callback(x52dev, state->state);
+    if (state->allowed_type == ED_LED_TYPE_LEDS)
+        return state->callback(x52dev,state->state);
+    else
+        return state->callback(x52dev, id, state->state);
 }
 
 
@@ -31,7 +30,7 @@ static ed_led_type_t led_types[] = {
     {"MFD3",     ED_LED_TYPE_TEXT,  2,                      (cb_t)mfd_text},
     // all leds and mfd only
     {"MFD",      ED_LED_TYPE_MFD,   1,                      (cb_t)led_state},
-    {"LEDS",     ED_LED_TYPE_LEDS,  0,                      (cb_t)leds_state},
+    {"LEDS",     ED_LED_TYPE_LEDS,  0,                      (cb_t)led_state},
     // each led
     {"FIRE",     ED_LED_TYPE_LED,   LIBX52_LED_FIRE,        (cb_t)led_state},
     {"A",        ED_LED_TYPE_LED,   LIBX52_LED_A,           (cb_t)led_state},

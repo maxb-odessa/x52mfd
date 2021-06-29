@@ -6,7 +6,11 @@
 #include "ed-odyssey.h"
 
 #define ED_PATTERNS_FILE_VAR "ED_ODYSSEY_PATTERNS_FILE"
-#define ED_JOURNAL_DIR_VAR   "ED_JOURNAL_DIR" 
+#define ED_JOURNAL_DIR_VAR   "ED_JOURNAL_DIR"
+
+#ifndef _ED_ODYSSEY_DEF_PATTERNS_PATH
+#define _ED_ODYSSEY_DEF_PATTERNS_PATH "./ed-odyssey.json"
+#endif
 
 static ed_pattern_t *patterns;
 
@@ -17,8 +21,8 @@ static int mod_ed_setup(x52mfd_t *x52mfd) {
 
     // check for required paths
     if (! patterns_file) {
-        fprintf(stderr,"Env var '" ED_PATTERNS_FILE_VAR "' not set\n");
-        return 1;
+        // use default file location
+        patterns_file = _ED_ODYSSEY_DEF_PATTERNS_PATH;
     }
 
     if (! journal_dir) {
@@ -59,8 +63,8 @@ static int mod_ed_loop(x52mfd_t *x52mfd) {
                 pattern_apply_actions(x52mfd, ed_pattern, journal_event);
         }
 
-        // sleep 1 sec
-        sleep(1);
+        // sleep 300 msec
+        usleep(300*1000);
 
     }
 

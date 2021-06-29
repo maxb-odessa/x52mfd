@@ -10,6 +10,7 @@ AC_CONFIG_FILES([Makefile])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_DISABLE_STATIC
 
+
 # Checks for programs.
 AC_PROG_CC
 LT_INIT
