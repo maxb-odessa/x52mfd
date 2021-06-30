@@ -11,6 +11,8 @@ typedef struct {
     libx52_device   *dev;
 } x52mfd_t;
 
+extern int x52mfd_debug;
+extern int x52mfd_must_stop;
 
 // modules loading and calling stuff
 typedef int (*x52mfd_func_t)(x52mfd_t *);

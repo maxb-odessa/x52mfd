@@ -19,10 +19,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <signal.h>
 
 #include "x52mfd.h"
 
-int debug;
+int x52mfd_debug;
 
 // just a help printer
 void print_help(void) {
@@ -47,6 +48,11 @@ void fatality(int really, char *reason) {
         error(1, errno, reason);
 }
 
+// stop mod_run loop!
+int x52mfd_must_stop;
+void mod_run_stopper(int sig) {
+    x52mfd_must_stop = 1;
+}
 
 // the main part
 int main(int argc, char *argv[]) {
@@ -64,7 +70,7 @@ int main(int argc, char *argv[]) {
     while ((opt = getopt(argc, argv, opts)) != -1) {
         switch (opt) {
             case 'd':
-                debug = 1;
+                x52mfd_debug = 1;
                 break;
             case 'p':
                 modules_dir = optarg;
@@ -107,6 +113,10 @@ int main(int argc, char *argv[]) {
 
     // create joy object and run joy reconnector
     fatality(x52mfd_init(&x52mfd), "libx52 init failed\n");
+
+    signal(SIGINT, mod_run_stopper);
+    signal(SIGQUIT, mod_run_stopper);
+    signal(SIGTERM, mod_run_stopper);
 
     // execute module functions in order
     if (mod_init && mod_init(&x52mfd))

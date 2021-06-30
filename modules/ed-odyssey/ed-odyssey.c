@@ -12,11 +12,12 @@
 #define _ED_ODYSSEY_DEF_PATTERNS_PATH "./ed-odyssey.json"
 #endif
 
-static ed_pattern_t *patterns;
+static ed_pattern_t *patterns, *begin, *end;
 
 static int mod_ed_setup(x52mfd_t *x52mfd) {
     char *patterns_file = getenv(ED_PATTERNS_FILE_VAR);
     char *journal_dir = getenv(ED_JOURNAL_DIR_VAR);
+    ed_pattern_t *b;
 
 
     // check for required paths
@@ -31,12 +32,24 @@ static int mod_ed_setup(x52mfd_t *x52mfd) {
     }
 
     // read and parse actions file
-    if (parse_patterns_file(patterns_file, &patterns))
+    if (parse_patterns_file(patterns_file, &patterns, &begin, &end))
         return 1;
 
     // prepare journal processor
     if (journal_init(journal_dir))
         return 1;
+
+    // prepare clock(s)
+    libx52_set_clock_format(x52mfd->dev, LIBX52_CLOCK_1, LIBX52_CLOCK_FORMAT_24HR);
+    libx52_set_date_format(x52mfd->dev, LIBX52_DATE_FORMAT_DDMMYY);
+
+    // apply begin defaults
+    b = begin;
+    while (b) {
+        x52mfd_can(x52mfd);
+        pattern_apply_actions(x52mfd, b, "");
+        b = b->next;
+    }
 
     return 0;
 }
@@ -44,23 +57,26 @@ static int mod_ed_setup(x52mfd_t *x52mfd) {
 static int mod_ed_loop(x52mfd_t *x52mfd) {
     char *journal_event;
     ed_pattern_t *ed_pattern;
+    time_t prev_time = 0;
 
-    // prepare clock(s)
-    libx52_set_clock_format(x52mfd->dev, LIBX52_CLOCK_1, LIBX52_CLOCK_FORMAT_24HR);
-    libx52_set_date_format(x52mfd->dev, LIBX52_DATE_FORMAT_DDMMYY);
+    while (! x52mfd_must_stop) {
+        time_t now = time(NULL);
 
-    while (1) {
+        // update date-time each 20sec
+        if (now - prev_time >= 20) {
+            x52mfd_can(x52mfd);
+            libx52_set_clock(x52mfd->dev, now, 1);
+            ed_led_apply(x52mfd->dev);
+            prev_time = now;
+        }
 
-        // update date-time
-        libx52_set_clock(x52mfd->dev, time(NULL), 1);
-        ed_led_apply(x52mfd->dev);
-
+        // find event by pattern and apply it if found
         while ((journal_event = journal_get_event())) {
-
-            // find event by pattern and apply it if found
             ed_pattern = pattern_match_event(journal_event, patterns);
-            if (ed_pattern)
+            if (ed_pattern) {
+                x52mfd_can(x52mfd);
                 pattern_apply_actions(x52mfd, ed_pattern, journal_event);
+            }
         }
 
         // sleep 300 msec
@@ -72,11 +88,15 @@ static int mod_ed_loop(x52mfd_t *x52mfd) {
 }
 
 static int mod_ed_done(x52mfd_t *x52mfd) {
+    ed_pattern_t *e = end;
 
-
-    // close file
-
-    // restore joy state(?)
+    // apply end
+    e = end;
+    while (e) {
+        x52mfd_can(x52mfd);
+        pattern_apply_actions(x52mfd, e, "");
+        e = e->next;
+    }
 
     return 0;
 }

@@ -52,10 +52,9 @@ typedef struct ed_pattern {
     struct ed_pattern   *next;
 } ed_pattern_t;
 
-extern int debug;
 
 // ???
-int parse_patterns_file(char *fname, ed_pattern_t **patterns);
+int parse_patterns_file(char *fname, ed_pattern_t **patterns, ed_pattern_t **begin, ed_pattern_t **end);
 ed_pattern_t *pattern_match_event(char *event_string, ed_pattern_t *patterns);
 int pattern_apply_actions(x52mfd_t *x52mfd, ed_pattern_t *pattern, char *event_string);
 

@@ -85,9 +85,59 @@ static char *read_file(char *fname) {
 }
 
 
+// parse json node
+int parse_json_node(cJSON *j, char *node, ed_pattern_t **patterns) {
+
+    // get requested node by name
+    cJSON *json = cJSON_GetObjectItemCaseSensitive(j, node);
+    if (! json) {
+        fprintf(stderr, "Section 's' not found\n");
+        return 1;
+    }
+
+    // iterate over patterns and actions 
+    json = json->child;
+    while (json) {
+
+        cJSON *jp = NULL;
+        ed_pattern_t    *ed_pattern;
+        ed_led_action_t *ed_led_action;
+
+        // non-array value?
+        if (json->type != cJSON_Array) {
+            fprintf(stderr, "Error in json file: ARRAY expected near line '%s'\n", json->string);
+            return 1;
+        }
+
+        // pattern - add it to the list
+        ed_pattern = add_pattern(patterns, json->string);
+        if (! ed_pattern) {
+            return 1;
+        }
+
+        cJSON_ArrayForEach(jp, json) {
+            cJSON *j = jp->child;
+            if (j->type != cJSON_String) {
+                fprintf(stderr, "Error in json file: STRING expected near line '%s'\n", j->string);
+                return 1;
+            }
+            ed_led_action = add_led_action(&ed_pattern->actions, j->string, j->valuestring);
+            if (! ed_led_action) {
+                fprintf(stderr, "Invalid action: '%s':'%s'\n", j->string, j->valuestring);
+                return 1;
+            }
+        }
+
+        // take next pattern
+        json = json->next;
+
+    } // while(json)
+
+    return 0;
+}
 
 // read and parse actions file
-int parse_patterns_file(char *fname, ed_pattern_t **patterns) {
+int parse_patterns_file(char *fname, ed_pattern_t **patterns, ed_pattern_t **begin, ed_pattern_t **end) {
     cJSON *json;
     char *buf;
 
@@ -103,43 +153,13 @@ int parse_patterns_file(char *fname, ed_pattern_t **patterns) {
         return 1;
     }
 
-    // iterate over patterns and actions 
-    json = json->child;
-    while (json) {
-
-        cJSON *jp = NULL;
-        ed_pattern_t    *ed_pattern;
-        ed_led_action_t *ed_led_action;
-
-        // non-array value?
-        if (json->type != cJSON_Array) {
-            fprintf(stderr, "Error in json file '%s': ARRAY expected near line '%s'\n", fname, json->string);
-            return 1;
-        }
-
-        // pattern - add it to the list
-        ed_pattern = add_pattern(patterns, json->string);
-        if (! ed_pattern) {
-            return 1;
-        }
-
-        cJSON_ArrayForEach(jp, json) {
-            cJSON *j = jp->child;
-            if (j->type != cJSON_String) {
-                fprintf(stderr, "Error in json file '%s': STRING expected near line '%s'\n", fname, j->string);
-                return 1;
-            }
-            ed_led_action = add_led_action(&ed_pattern->actions, j->string, j->valuestring);
-            if (! ed_led_action) {
-                fprintf(stderr, "Invalid action: '%s':'%s'\n", j->string, j->valuestring);
-                return 1;
-            }
-        }
-
-        // take next pattern
-        json = json->next;
-
-    } // while(json)
+    // parse BEGIN, EVENTS and END sections
+    if (parse_json_node(json, "BEGIN", begin) ||
+            parse_json_node(json, "EVENTS", patterns) ||
+            parse_json_node(json, "END", end)) {
+        fprintf(stderr, "Parse of '%s' failed\n", fname);
+        return 1;
+    }
 
 
     return 0;
@@ -228,7 +248,7 @@ static char *subst_event_string(char *patt, char **subst) {
 int pattern_apply_actions(x52mfd_t *x52mfd, ed_pattern_t *pattern, char *event_string) {
     ed_led_action_t *action = pattern->actions;
 
-    if (debug) {
+    if (x52mfd_debug) {
         fprintf(stderr, "GOT: '%s'\nMATCHED: '%s'\n", event_string, pattern->string);
         if (pattern->subst) {
             fprintf(stderr, "SUBMATRCHES:\n");
@@ -242,7 +262,7 @@ int pattern_apply_actions(x52mfd_t *x52mfd, ed_pattern_t *pattern, char *event_s
 
         if (action->led->type == ED_LED_TYPE_TEXT) {
             text = subst_event_string(action->state->patt, pattern->subst);
-            if (debug)
+            if (x52mfd_debug)
                 fprintf(stderr, "SUBSTED TEX: '%s'\n", text);
         }
 
