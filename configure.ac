@@ -10,7 +10,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_PREFIX_DEFAULT([$HOME/.local])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-CFLAGS=" -g -ggdb -O0"
+CFLAGS="-std=c11 -g -ggdb -O0"
 
 # Checks for programs.
 AC_PROG_CC
@@ -18,10 +18,11 @@ AC_PROG_CC
 # Checks for libraries.
 AX_PTHREAD
 LIBS="$PTHREAD_LIBS $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CFLAGS="-D_GNU_SOURCE $CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 # Checks for header files.
+AC_CHECK_HEADERS([pthread.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

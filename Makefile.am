@@ -9,6 +9,7 @@ x52mfd_SOURCES	=	src/main.c		\
 					src/reader.c	\
 					src/writer.c	\
 					src/sopen.c		\
+					src/connector.c	\
 					include/x52mfd.h
 
 x52mfd_CFLAGS	=	-Wall -Werror -I$(top_srcdir)/include $(X52LIB_CFLAGS)
