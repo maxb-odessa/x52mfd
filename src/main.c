@@ -90,6 +90,10 @@ int main(int argc, char *argv[], char *envp[]){
     } else
         argv ++;
 
+    // start external proggie
+    if (prg_sopen(argv, envp, fds, &child_pid))
+        return 1;
+
     // setup signals handlers
     signal(SIGCHLD, sigchild);
     signal(SIGTERM, sigterm);
@@ -105,16 +109,12 @@ int main(int argc, char *argv[], char *envp[]){
     // setup clean exit
     atexit(cleanups);
 
-    // start external proggie
-    if (prg_sopen(argv, envp, fds, &child_pid)) {
-        fprintf(stderr, "failed to execute '%s ...': %s\n", argv[0], strerror(errno));
-        return 1;
-    }
-
     // init threads context
     ctx.infd = fds[0];
     ctx.outfd = fds[1];
+    ctx.connected = 0;
     ctx.done = 0;
+    pthread_mutex_init(&ctx.mutex, NULL);
 
     // start threads for connector, reader and writer
     pthread_create(&threads[0], NULL, joy_connector, (void *)&ctx);

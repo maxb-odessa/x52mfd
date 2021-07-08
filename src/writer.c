@@ -8,7 +8,7 @@ void * prg_writer(void *arg) {
     ctx_t *ctx = (ctx_t *)arg;
 
     while (!ctx->done)
-        sleep(1);
+        usleep(LOOP_DELAY_US);
 
     puts("wr done");
 
