@@ -617,6 +617,10 @@ int execute_cmd(ctx_t *ctx, char *cmd[]) {
         return cmd_date(ctx, cmd);
     else if (! strcasecmp(cmd[0], "update"))
         return cmd_update(ctx, cmd);
+    else if (! strcasecmp(cmd[0], "raw")) {
+        fprintf(stderr, "command 'raw' is not supported\n");
+        return 1;
+    }
 
     fprintf(stderr, "unknown command '%s ...'\n", cmd[0]);
 

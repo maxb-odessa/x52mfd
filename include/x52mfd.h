@@ -8,16 +8,18 @@
 #endif
 
 #include <libx52/libx52.h>
+#include <libx52/libx52io.h>
 
 // threads context for connector, reader and writer
 typedef struct {
-    libx52_device   *x52dev;    // joy device
-    int             infd;       // prog stdout to us
-    int             outfd;      // us to prog stdin
-    _Atomic int     done;       // threads must exit
-    _Atomic int     connected;  // is joy connected
-    pthread_cond_t  connected_condvar;
-    pthread_mutex_t mutex;      // ctx locker
+    libx52_device       *x52dev;    // joy device
+    libx52io_context    *x52ctx;    // joy ctx
+    int                 infd;       // prog stdout to us
+    int                 outfd;      // us to prog stdin
+    _Atomic int         done;       // threads must exit
+    _Atomic int         connected;  // is joy connected
+    pthread_cond_t      connected_condvar;
+    pthread_mutex_t     mutex;      // ctx locker
 } ctx_t;
 
 int prg_sopen(char **args, char **env, int fds[2], pid_t *pid);
