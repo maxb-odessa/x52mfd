@@ -28,4 +28,6 @@ void *prg_writer(void *arg);
 // loops, select() and other polls delay (in mic secs)
 #define LOOP_DELAY_US (100 * 1000)
 
+// get int percents from X on BASE
+#define PRCNT(X, BASE) ((X) * (BASE) / 100)
 

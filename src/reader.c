@@ -21,7 +21,7 @@ static int execute_cmd(ctx_t *ctx, char *cmd[]);
 // not thread safe but it is in a single thread, right?
 void *prg_reader(void *arg) {
     ctx_t *ctx = (ctx_t *)arg;
-    char *cmd[1+4];  // the longest cmd is 'date' which has 4 args
+    char *cmd[1 + 4];  // the longest cmd is 'date' which has 4 args
     char buf[BUFSIZE + 1];
     int rc;
 
@@ -172,6 +172,7 @@ int parse_cmd(char *buf, char *cmd[]) {
 }
 
 // exec led command
+// led <name> <state>
 static int cmd_led(ctx_t *ctx, char *cmd[]) {
     libx52_led_id led;
     libx52_led_state state;
@@ -234,9 +235,11 @@ static int cmd_led(ctx_t *ctx, char *cmd[]) {
     return rc;
 }
 
-#define PRCNT(X) ((X) * 128 / 100)
+#define PRCNT(X, BASE) ((X) * (BASE) / 100)
 
 // exec bri command
+// bri <mfd|led> <level>
+// level is 0-128 or 0-100%
 static int cmd_bri(ctx_t *ctx, char *cmd[]) {
     int rc;
     int mfd;
@@ -266,7 +269,7 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
             fprintf(stderr, "command '%s': invalid brightness level '%s%%'\n", cmd[0], cmd[2]);
             return 1;
         }
-        bri = PRCNT(bri);
+        bri = PRCNT(bri, 128);
     } else {
         bri = strtol(cmd[2], &err, 10);
         if ((err && *err) || bri < 0 || bri > 128) {
@@ -283,6 +286,7 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
 }
 
 // exec mfd command
+// mfd <line> <"text">
 static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
     int rc;
     int line;
@@ -293,11 +297,11 @@ static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
     }
 
     // pick mfd line
-    if (! strcasecmp(cmd[1], "1"))
+    if (! strcmp(cmd[1], "1"))
         line = 0;
-    else if (! strcasecmp(cmd[1], "2"))
+    else if (! strcmp(cmd[1], "2"))
         line  = 1;
-    else if (! strcasecmp(cmd[1], "3"))
+    else if (! strcmp(cmd[1], "3"))
         line = 2;
     else {
         fprintf(stderr, "command '%s': invalid line '%s', must be 1,2 or 3\n", cmd[0], cmd[1]);
@@ -312,6 +316,7 @@ static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
 }
 
 // exec blink command
+// blink <on|off>
 static int cmd_blink(ctx_t *ctx, char *cmd[]) {
     int rc;
     int blink;
@@ -339,6 +344,7 @@ static int cmd_blink(ctx_t *ctx, char *cmd[]) {
 }
 
 // exec shift command
+// shift <on|off>
 static int cmd_shift(ctx_t *ctx, char *cmd[]) {
     int rc;
     int shift;
@@ -366,22 +372,204 @@ static int cmd_shift(ctx_t *ctx, char *cmd[]) {
 }
 
 // exec clock command
+// clock <local|gmt> <12hr|24hr> <ddmmyy|mmddyy|yymmdd>
 static int cmd_clock(ctx_t *ctx, char *cmd[]) {
-    return 0;
+    int rc;
+    int is_gmt;
+    libx52_clock_format hr12_24;
+    libx52_date_format format;
+
+    if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
+        fprintf(stderr, "command '%s' requires 3 args: local|gmt 12hr|24hr ddmmyy|mmddyy|yymmdd\n", cmd[0]);
+        return 1;
+    }
+
+    // pick local or gmt
+    if (! strcasecmp(cmd[1], "local"))
+        is_gmt = 0;
+    else if (! strcasecmp(cmd[1], "gmt"))
+        is_gmt = 1;
+    else {
+        fprintf(stderr, "command '%s': invalid tz '%s', must be local or gmt\n", cmd[0], cmd[1]);
+        return 1;
+    }
+
+    // pick 12 or 24 hr
+    if (! strcasecmp(cmd[2], "12hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_12HR;
+    else if (! strcasecmp(cmd[2], "24hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
+    else {
+        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[2]);
+        return 1;
+    }
+
+    // pick format
+    if (! strcasecmp(cmd[3], "ddmmyy"))
+        format = LIBX52_DATE_FORMAT_DDMMYY;
+    else if (! strcasecmp(cmd[3], "mmddyy"))
+        format = LIBX52_DATE_FORMAT_MMDDYY;
+    else if (! strcasecmp(cmd[3], "yymmdd"))
+        format = LIBX52_DATE_FORMAT_YYMMDD;
+    else {
+        fprintf(stderr, "command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
+        return 1;
+    }
+
+    pthread_mutex_lock(&ctx->mutex);
+    rc = libx52_set_clock(ctx->x52dev, time(NULL), is_gmt);
+    rc += libx52_set_clock_format(ctx->x52dev, LIBX52_CLOCK_1, hr12_24);
+    rc += libx52_set_date_format(ctx->x52dev, format);
+    pthread_mutex_unlock(&ctx->mutex);
+
+    return rc;
 }
 
 // exec offset command
+// offset <2|3> <offset from clock 1 in minutes> <12hr|24hr>
 static int cmd_offset(ctx_t *ctx, char *cmd[]) {
-    return 0;
+    int rc;
+    libx52_clock_id clcid;
+    libx52_clock_format hr12_24;
+    int offset;
+    char *err = NULL;
+
+    if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
+        fprintf(stderr, "command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
+        return 1;
+    }
+
+    // pick clock id
+    if (! strcmp(cmd[1], "2"))
+        clcid = LIBX52_CLOCK_2;
+    else if (! strcmp(cmd[1], "3"))
+        clcid = LIBX52_CLOCK_3;
+    else {
+        fprintf(stderr, "command '%s': invalid clock id '%s', must be 2 or 3\n", cmd[0], cmd[1]);
+        return 1;
+    }
+
+    // pick clock offset
+    offset = strtol(cmd[2], &err, 10);
+    if ((err && *err) || offset < -1440 || offset > 1440) {
+        fprintf(stderr, "command '%s': invalid clock offset '%s', must be in [-1440, 1440]\n", cmd[0], cmd[2]);
+        return 1;
+    }
+
+    // pick 12 or 24 hr
+    if (! strcasecmp(cmd[3], "12hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_12HR;
+    else if (! strcasecmp(cmd[3], "24hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
+    else {
+        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
+        return 1;
+    }
+
+    pthread_mutex_lock(&ctx->mutex);
+    rc = libx52_set_clock_timezone(ctx->x52dev, clcid, offset);
+    rc += libx52_set_clock_format(ctx->x52dev, clcid, hr12_24);
+    pthread_mutex_unlock(&ctx->mutex);
+
+    return rc;
 }
 
 // exec time command
+// time <hour> <minute> <12hr|24hr>
 static int cmd_time(ctx_t *ctx, char *cmd[]) {
-    return 0;
+    int rc;
+    int hr, min;
+    libx52_clock_format hr12_24;
+    char *err = NULL;
+
+    if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
+        fprintf(stderr, "command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
+        return 1;
+    }
+
+    // pick hour
+    hr = strtol(cmd[1], &err, 10);
+    if ((err && *err) || hr < 0 || hr > 24) {
+        fprintf(stderr, "command '%s': invalid hours '%s', must be in [0, 24]\n", cmd[0], cmd[1]);
+        return 1;
+    }
+
+    // pick minutes
+    min = strtol(cmd[2], &err, 10);
+    if ((err && *err) || min < 0 || min > 59) {
+        fprintf(stderr, "command '%s': invalid minutes '%s', must be in [0, 59]\n", cmd[0], cmd[2]);
+        return 1;
+    }
+
+    // pick 12 or 24 hr
+    if (! strcasecmp(cmd[3], "12hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_12HR; 
+    else if (! strcasecmp(cmd[3], "24hr"))
+        hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
+    else {
+        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
+        return 1;
+    }
+
+    pthread_mutex_lock(&ctx->mutex);
+    rc = libx52_set_time(ctx->x52dev, hr, min);
+    rc += libx52_set_clock_format(ctx->x52dev, LIBX52_CLOCK_1, hr12_24);
+    pthread_mutex_unlock(&ctx->mutex);
+
+    return rc;
 }
 
 // exec date command
+// date <dd> <mm> <yy> <ddmmyy | mmddyy | yymmdd>
 static int cmd_date(ctx_t *ctx, char *cmd[]) {
+    int rc;
+    int day, mon, year;
+    libx52_date_format format;
+    char *err = NULL;
+
+    if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
+        fprintf(stderr, "command '%s' requires 4 args: day, mon. year and ddmmyy|mmddyy|yymmdd\n", cmd[0]);
+        return 1;
+    }
+
+    // pick day
+    day = strtol(cmd[1], &err, 10);
+    if ((err && *err) || day < 0 || day > 31) {
+        fprintf(stderr, "command '%s': invalid day '%s', must be in [0, 31]\n", cmd[0], cmd[1]);
+        return 1;
+    }
+
+    // pick mon
+    mon = strtol(cmd[2], &err, 10);
+    if ((err && *err) || mon < 0 || mon > 12) {
+        fprintf(stderr, "command '%s': invalid mon '%s', must be in [0, 12]\n", cmd[0], cmd[2]);
+        return 1;
+    }
+
+    // pick year
+    year = strtol(cmd[3], &err, 10);
+    if ((err && *err) || year < 0 || year > 99) {
+        fprintf(stderr, "command '%s': invalid year '%s', must be in [0, 99]\n", cmd[0], cmd[3]);
+        return 1;
+    }
+
+    // pick format
+    if (! strcasecmp(cmd[3], "ddmmyy"))
+        format = LIBX52_DATE_FORMAT_DDMMYY;
+    else if (! strcasecmp(cmd[3], "mmddyy"))
+        format = LIBX52_DATE_FORMAT_MMDDYY;
+    else if (! strcasecmp(cmd[3], "yymmdd"))
+        format = LIBX52_DATE_FORMAT_YYMMDD;
+    else {
+        fprintf(stderr, "command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
+        return 1;
+    }
+
+    pthread_mutex_lock(&ctx->mutex);
+    rc = libx52_set_date(ctx->x52dev, day, mon, year);
+    rc += libx52_set_date_format(ctx->x52dev, format);
+    pthread_mutex_unlock(&ctx->mutex);
+
     return 0;
 }
 
@@ -397,7 +585,7 @@ static int cmd_update(ctx_t *ctx, char *cmd[]) {
 }
 
 
-// execute command
+// select and execute a command
 int execute_cmd(ctx_t *ctx, char *cmd[]) {
 
     // wait for joystick to connect if not yet
