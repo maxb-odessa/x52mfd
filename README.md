@@ -8,6 +8,7 @@ Write joystick events to proggie STDIN.
 Built on [libx52](https://github.com/nirenjan/x52pro-linux.git)
 
 Commands are exactly the same as used by x52cli:
+
     Usage: x52cli <command> [arguments]
     
     Commands:
@@ -25,17 +26,17 @@ Commands are exactly the same as used by x52cli:
     WARNING: raw command may damage your device
     
 
-## Exceptions:
+### Exceptions:
     * 'raw' command is not supported
     * all fields are mandatory
 
-## Addition:
+### Addition:
     * proggie must send new command 'update' for prev commands to be applied
     * commands and args (except text) are case insensitive
     * brightness may be specified by value (0-128) or by percents (0-100%)
     * call to 'clock' command will set current time automatically
 
-## Examples (bash):
+### Examples (bash):
     echo "bri mfd 30%"
     echo "bri led 30%"
     echo update
@@ -49,7 +50,7 @@ Commands are exactly the same as used by x52cli:
     echo "mfd 3 \"line last!\""
     echo update
 
-## Led IDs:
+### Led IDs:
     * fire
     * a
     * b
@@ -62,7 +63,7 @@ Commands are exactly the same as used by x52cli:
     * clutch
     * throttle
 
-## Led States:
+### Led States:
     * off
     * on
     * red
