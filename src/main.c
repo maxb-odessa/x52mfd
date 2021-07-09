@@ -37,6 +37,7 @@ static void sigchild(int sig) {
     child_pid = 0;
 
     // inform threads to finish (in case of unexpected child death)
+    pthread_cond_signal(&ctx.connected_condvar);
     ctx.done = 1;
 
     return;
@@ -48,6 +49,7 @@ static void sigterm(int sig) {
     fprintf(stderr, "got signal %d", sig);
 
     // inform threads to finish (cleanups() will handle running child)
+    pthread_cond_signal(&ctx.connected_condvar);
     ctx.done = 1;
 }
 
@@ -114,6 +116,7 @@ int main(int argc, char *argv[], char *envp[]){
     ctx.outfd = fds[1];
     ctx.connected = 0;
     ctx.done = 0;
+    pthread_cond_init(&ctx.connected_condvar, NULL);
     pthread_mutex_init(&ctx.mutex, NULL);
 
     // start threads for connector, reader and writer
