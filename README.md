@@ -135,9 +135,9 @@ Button names cound be found in __libx52__ sources plus I've made some other by m
     * BTN_HAT_SW
     * BTN_HAT_W
     * BTN_HAT_NW
-    * *MODE*
-    * *CONNECTED*
-    * *DICONNECTED*
+    * MODE
+    * CONNECTED
+    * DICONNECTED
 
 ### Addition:
 

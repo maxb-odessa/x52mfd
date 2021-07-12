@@ -87,10 +87,13 @@ int main(int argc, char *argv[], char *envp[]){
     if (argc < 2) {
         show_help(argv[0]);
         return 1;
-    } else
+    } else {
         argv ++;
+        argc --;
+    }
 
     // start external proggie
+    plog("main: starting '%s ...'\n", argv[0]);
     if (prg_sopen(argv, envp, fds, &child_pid))
         return 1;
 

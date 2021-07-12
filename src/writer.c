@@ -82,7 +82,7 @@ void * prg_writer(void *arg) {
     }
 
     // we're done
-    plog("writer: exited\n");
+    //plog("writer: exited\n");
     return NULL;
 }
 
@@ -105,7 +105,6 @@ int send_changes(ctx_t *ctx, libx52io_report *curr, libx52io_report *prev) {
             else
                 strcat(buf, " on\n");
             prg_writer_aux(ctx, buf);
-            plog("%s\n", buf);
         }
     }
 

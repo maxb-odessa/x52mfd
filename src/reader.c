@@ -53,7 +53,7 @@ void *prg_reader(void *arg) {
     }
 
     // we're done
-    plog("reader: exited\n");
+    //plog("reader: exited\n");
     return NULL;
 }
 
@@ -71,7 +71,7 @@ int read_cmd(ctx_t *ctx, char *buf) {
     // shift the buf
     // do this before any fd reading to fetch all the lines that are already accumulated in the buffer
     if (buflen > 0) {
-        memmove(buf, buf + buflen + 1, BUFSIZE - buflen);
+        memmove(buf, buf + buflen + 1, BUFSIZE);
         buflen = strlen(buf);
     }
 
