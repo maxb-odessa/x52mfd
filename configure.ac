@@ -22,7 +22,7 @@ CFLAGS="-D_GNU_SOURCE $CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 # Checks for header files.
-AC_CHECK_HEADERS([pthread.h])
+AC_CHECK_HEADERS([pthread.h stdarg.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

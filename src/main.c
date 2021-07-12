@@ -29,9 +29,9 @@ static void sigchild(int sig) {
             exit(1);
         }
         if (WIFEXITED(ws))
-            fprintf(stderr, "child %d exited, status=%d\n", child_pid, WEXITSTATUS(ws));
+            plog("child %d exited, status=%d\n", child_pid, WEXITSTATUS(ws));
         else if (WIFSIGNALED(ws))
-            fprintf(stderr, "child %d killed by signal %d\n", child_pid, WTERMSIG(ws));
+            plog("child %d killed by signal %d\n", child_pid, WTERMSIG(ws));
     } while (!WIFEXITED(ws) && !WIFSIGNALED(ws));
 
     child_pid = 0;
@@ -46,7 +46,7 @@ static void sigchild(int sig) {
 // main signal handler
 static void sigterm(int sig) {
 
-    fprintf(stderr, "got signal %d", sig);
+    plog("got signal %d", sig);
 
     // inform threads to finish (cleanups() will handle running child)
     pthread_cond_signal(&ctx.connected_condvar);
@@ -59,14 +59,14 @@ static void cleanups(void) {
 
     // kill child and wait for it to die
     if (child_pid > 0) {
-        fprintf(stderr, "terminating child %d\n", child_pid);
+        plog("terminating child %d\n", child_pid);
         if (! kill(child_pid, SIGTERM))
             pause();
         else
             perror("kill()");
     }
 
-    fprintf(stderr, "exiting\n");
+    plog("exiting\n");
 }
 
 // show help

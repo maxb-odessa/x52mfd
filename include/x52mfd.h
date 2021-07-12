@@ -22,6 +22,9 @@ typedef struct {
     pthread_mutex_t     mutex;      // ctx locker
 } ctx_t;
 
+// print log message
+void plog(char *fmt, ...);
+
 int prg_sopen(char **args, char **env, int fds[2], pid_t *pid);
 void *joy_connector(void *arg);
 void *prg_reader(void *arg);

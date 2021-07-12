@@ -16,7 +16,7 @@ void *joy_connector(void *arg) {
 
     rc = libx52_init(&ctx->x52dev);
     if (rc != LIBX52_SUCCESS) {
-        fprintf(stderr, "libx52 init failed: %s\n", libx52_strerror(rc));
+        plog("libx52 init failed: %s\n", libx52_strerror(rc));
         // we can't go on as well as other threads
         ctx->done = 1;
     } else {
@@ -41,10 +41,10 @@ void *joy_connector(void *arg) {
             pthread_mutex_lock(&ctx->mutex);
             rc = libx52_connect(ctx->x52dev);
             if (rc != LIBX52_SUCCESS) {
-                //fprintf(stderr, "connection to joystick failed: %s\n", libx52_strerror(rc));
+                //plog("connection to joystick failed: %s\n", libx52_strerror(rc));
                 usleep(LOOP_DELAY_US * 10);
             } else {
-                fprintf(stderr, "connected to x52pro joystick\n");
+                plog("connected to x52pro joystick\n");
                 ctx->connected = 1;
                 pthread_cond_signal(&ctx->connected_condvar);
             }
@@ -55,6 +55,14 @@ void *joy_connector(void *arg) {
         // some delay between checks
         usleep(LOOP_DELAY_US);
     }
+
+    // cleanups
+    pthread_mutex_lock(&ctx->mutex);
+    ctx->connected = 0;
+    if (libx52_is_connected(ctx->x52dev))
+        libx52_disconnect(ctx->x52dev);
+    libx52_exit(ctx->x52dev);
+    pthread_mutex_unlock(&ctx->mutex);
 
     // done
     return NULL;

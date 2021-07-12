@@ -165,7 +165,7 @@ int parse_cmd(char *buf, char *cmd[]) {
     /*
        for (int i = 0; i < 5; i ++)
        if (cmd[i])
-       fprintf(stderr, "CMD[%d] = <%s>\n", i, cmd[i]);
+       plog("CMD[%d] = <%s>\n", i, cmd[i]);
        */
 
     return 0;
@@ -179,7 +179,7 @@ static int cmd_led(ctx_t *ctx, char *cmd[]) {
     int rc = 1;
 
     if (! cmd[1] || ! cmd[2]) {
-        fprintf(stderr, "command '%s' requires 2 args: led_name and led_state\n", cmd[0]);
+        plog("command '%s' requires 2 args: led_name and led_state\n", cmd[0]);
         return 1;
     }
 
@@ -207,7 +207,7 @@ static int cmd_led(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[1], "throttle"))
         led = LIBX52_LED_THROTTLE;
     else {
-        fprintf(stderr, "command '%s': unknown led name '%s'\n", cmd[0], cmd[1]);
+        plog("command '%s': unknown led name '%s'\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -223,7 +223,7 @@ static int cmd_led(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[2], "green"))
         state = LIBX52_LED_STATE_GREEN;
     else {
-        fprintf(stderr, "command '%s': unknown led stat '%s'\n", cmd[0], cmd[2]);
+        plog("command '%s': unknown led stat '%s'\n", cmd[0], cmd[2]);
         return 1;
     }
 
@@ -247,7 +247,7 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
     char *err = NULL;
 
     if (! cmd[1] || ! cmd[2]) {
-        fprintf(stderr, "command '%s' requires 2 args: led|mfd and brightness\n", cmd[0]);
+        plog("command '%s' requires 2 args: led|mfd and brightness\n", cmd[0]);
         return 1;
     }
 
@@ -257,7 +257,7 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[1], "led"))
         mfd = 0;
     else {
-        fprintf(stderr, "command '%s': unknown led '%s'\n", cmd[0], cmd[1]);
+        plog("command '%s': unknown led '%s'\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -266,14 +266,14 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
         cmd[2][strlen(cmd[2]) - 1] = '\0';
         bri = strtol(cmd[2], &err, 10);
         if ((err && *err) || bri < 0 || bri > 100) {
-            fprintf(stderr, "command '%s': invalid brightness level '%s%%'\n", cmd[0], cmd[2]);
+            plog("command '%s': invalid brightness level '%s%%'\n", cmd[0], cmd[2]);
             return 1;
         }
         bri = PRCNT(bri, 128);
     } else {
         bri = strtol(cmd[2], &err, 10);
         if ((err && *err) || bri < 0 || bri > 128) {
-            fprintf(stderr, "command '%s': invalid brightness level '%s'\n", cmd[0], cmd[2]);
+            plog("command '%s': invalid brightness level '%s'\n", cmd[0], cmd[2]);
             return 1;
         }
     }
@@ -292,7 +292,7 @@ static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
     int line;
 
     if (! cmd[1] || ! cmd[2]) {
-        fprintf(stderr, "command '%s' requires 2 args: line and \"text\"\n", cmd[0]);
+        plog("command '%s' requires 2 args: line and \"text\"\n", cmd[0]);
         return 1;
     }
 
@@ -304,7 +304,7 @@ static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
     else if (! strcmp(cmd[1], "3"))
         line = 2;
     else {
-        fprintf(stderr, "command '%s': invalid line '%s', must be 1,2 or 3\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid line '%s', must be 1,2 or 3\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -322,7 +322,7 @@ static int cmd_blink(ctx_t *ctx, char *cmd[]) {
     int blink;
 
     if (! cmd[1]) {
-        fprintf(stderr, "command '%s' requires an arg: on|off\n", cmd[0]);
+        plog("command '%s' requires an arg: on|off\n", cmd[0]);
         return 1;
     }
 
@@ -332,7 +332,7 @@ static int cmd_blink(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[1], "off"))
         blink = 0;
     else {
-        fprintf(stderr, "command '%s': invalid state '%s', must be on or off\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid state '%s', must be on or off\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -350,7 +350,7 @@ static int cmd_shift(ctx_t *ctx, char *cmd[]) {
     int shift;
 
     if (! cmd[1]) {
-        fprintf(stderr, "command '%s' requires an arg: on|off\n", cmd[0]);
+        plog("command '%s' requires an arg: on|off\n", cmd[0]);
         return 1;
     }
 
@@ -360,7 +360,7 @@ static int cmd_shift(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[1], "off"))
         shift = 0;
     else {
-        fprintf(stderr, "command '%s': invalid state '%s', must be on or off\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid state '%s', must be on or off\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -380,7 +380,7 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     libx52_date_format format;
 
     if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
-        fprintf(stderr, "command '%s' requires 3 args: local|gmt 12hr|24hr ddmmyy|mmddyy|yymmdd\n", cmd[0]);
+        plog("command '%s' requires 3 args: local|gmt 12hr|24hr ddmmyy|mmddyy|yymmdd\n", cmd[0]);
         return 1;
     }
 
@@ -390,7 +390,7 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[1], "gmt"))
         is_gmt = 1;
     else {
-        fprintf(stderr, "command '%s': invalid tz '%s', must be local or gmt\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid tz '%s', must be local or gmt\n", cmd[0], cmd[1]);
         return 1;
     }
 
@@ -400,7 +400,7 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[2], "24hr"))
         hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
     else {
-        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[2]);
+        plog("command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[2]);
         return 1;
     }
 
@@ -412,7 +412,7 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[3], "yymmdd"))
         format = LIBX52_DATE_FORMAT_YYMMDD;
     else {
-        fprintf(stderr, "command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
+        plog("command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
         return 1;
     }
 
@@ -435,7 +435,7 @@ static int cmd_offset(ctx_t *ctx, char *cmd[]) {
     char *err = NULL;
 
     if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
-        fprintf(stderr, "command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
+        plog("command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
         return 1;
     }
 
@@ -445,14 +445,14 @@ static int cmd_offset(ctx_t *ctx, char *cmd[]) {
     else if (! strcmp(cmd[1], "3"))
         clcid = LIBX52_CLOCK_3;
     else {
-        fprintf(stderr, "command '%s': invalid clock id '%s', must be 2 or 3\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid clock id '%s', must be 2 or 3\n", cmd[0], cmd[1]);
         return 1;
     }
 
     // pick clock offset
     offset = strtol(cmd[2], &err, 10);
     if ((err && *err) || offset < -1440 || offset > 1440) {
-        fprintf(stderr, "command '%s': invalid clock offset '%s', must be in [-1440, 1440]\n", cmd[0], cmd[2]);
+        plog("command '%s': invalid clock offset '%s', must be in [-1440, 1440]\n", cmd[0], cmd[2]);
         return 1;
     }
 
@@ -462,7 +462,7 @@ static int cmd_offset(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[3], "24hr"))
         hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
     else {
-        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
+        plog("command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
         return 1;
     }
 
@@ -483,21 +483,21 @@ static int cmd_time(ctx_t *ctx, char *cmd[]) {
     char *err = NULL;
 
     if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
-        fprintf(stderr, "command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
+        plog("command '%s' requires 3 args: 1|2 offset 12hr|24hr\n", cmd[0]);
         return 1;
     }
 
     // pick hour
     hr = strtol(cmd[1], &err, 10);
     if ((err && *err) || hr < 0 || hr > 24) {
-        fprintf(stderr, "command '%s': invalid hours '%s', must be in [0, 24]\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid hours '%s', must be in [0, 24]\n", cmd[0], cmd[1]);
         return 1;
     }
 
     // pick minutes
     min = strtol(cmd[2], &err, 10);
     if ((err && *err) || min < 0 || min > 59) {
-        fprintf(stderr, "command '%s': invalid minutes '%s', must be in [0, 59]\n", cmd[0], cmd[2]);
+        plog("command '%s': invalid minutes '%s', must be in [0, 59]\n", cmd[0], cmd[2]);
         return 1;
     }
 
@@ -507,7 +507,7 @@ static int cmd_time(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[3], "24hr"))
         hr12_24 = LIBX52_CLOCK_FORMAT_24HR;
     else {
-        fprintf(stderr, "command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
+        plog("command '%s': invalid 12/24 format '%s', must be 12hr or 24hr\n", cmd[0], cmd[3]);
         return 1;
     }
 
@@ -528,28 +528,28 @@ static int cmd_date(ctx_t *ctx, char *cmd[]) {
     char *err = NULL;
 
     if (! cmd[1] || ! cmd[2] || ! cmd[3]) {
-        fprintf(stderr, "command '%s' requires 4 args: day, mon. year and ddmmyy|mmddyy|yymmdd\n", cmd[0]);
+        plog("command '%s' requires 4 args: day, mon. year and ddmmyy|mmddyy|yymmdd\n", cmd[0]);
         return 1;
     }
 
     // pick day
     day = strtol(cmd[1], &err, 10);
     if ((err && *err) || day < 0 || day > 31) {
-        fprintf(stderr, "command '%s': invalid day '%s', must be in [0, 31]\n", cmd[0], cmd[1]);
+        plog("command '%s': invalid day '%s', must be in [0, 31]\n", cmd[0], cmd[1]);
         return 1;
     }
 
     // pick mon
     mon = strtol(cmd[2], &err, 10);
     if ((err && *err) || mon < 0 || mon > 12) {
-        fprintf(stderr, "command '%s': invalid mon '%s', must be in [0, 12]\n", cmd[0], cmd[2]);
+        plog("command '%s': invalid mon '%s', must be in [0, 12]\n", cmd[0], cmd[2]);
         return 1;
     }
 
     // pick year
     year = strtol(cmd[3], &err, 10);
     if ((err && *err) || year < 0 || year > 99) {
-        fprintf(stderr, "command '%s': invalid year '%s', must be in [0, 99]\n", cmd[0], cmd[3]);
+        plog("command '%s': invalid year '%s', must be in [0, 99]\n", cmd[0], cmd[3]);
         return 1;
     }
 
@@ -561,7 +561,7 @@ static int cmd_date(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[3], "yymmdd"))
         format = LIBX52_DATE_FORMAT_YYMMDD;
     else {
-        fprintf(stderr, "command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
+        plog("command '%s': invalid date format '%s', must be ddmmyy|mmddyy|yymmdd\n", cmd[0], cmd[3]);
         return 1;
     }
 
@@ -591,7 +591,7 @@ int execute_cmd(ctx_t *ctx, char *cmd[]) {
     // wait for joystick to connect if not yet
     pthread_mutex_lock(&ctx->mutex);
     if (! ctx->connected) {
-        fprintf(stderr, "reader: waiting for joystick to connect\n");
+        plog("reader: waiting for joystick to connect\n");
         pthread_cond_wait(&ctx->connected_condvar, &ctx->mutex);
     }
     pthread_mutex_unlock(&ctx->mutex);
@@ -618,11 +618,11 @@ int execute_cmd(ctx_t *ctx, char *cmd[]) {
     else if (! strcasecmp(cmd[0], "update"))
         return cmd_update(ctx, cmd);
     else if (! strcasecmp(cmd[0], "raw")) {
-        fprintf(stderr, "command 'raw' is not supported\n");
+        plog("command 'raw' is not supported\n");
         return 1;
     }
 
-    fprintf(stderr, "unknown command '%s ...'\n", cmd[0]);
+    plog("unknown command '%s ...'\n", cmd[0]);
 
     return 1;
 }
