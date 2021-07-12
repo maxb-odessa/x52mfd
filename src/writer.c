@@ -118,11 +118,15 @@ int send_changes(ctx_t *ctx, libx52io_report *curr, libx52io_report *prev) {
     // compare hat states (also emulate POV behavior)
     if (curr->hat != prev->hat) {
         if (prev->hat > 0) {
-            snprintf(buf, sizeof(buf) - 1, "HAT_%s off\n", hatpos[prev->hat]);
+            strncpy(buf, "BTN_HAT_", sizeof(buf) - 1);
+            strncat(buf, hatpos[prev->hat], sizeof(buf) - 1);
+            strncat(buf, " off\n", sizeof(buf) - 1);
             prg_writer_aux(ctx, buf);
         }
         if (curr->hat > 0) {
-            snprintf(buf, sizeof(buf) - 1, "HAT_%s on\n", hatpos[curr->hat]);
+            strncpy(buf, "BTN_HAT_", sizeof(buf) - 1);
+            strncat(buf, hatpos[curr->hat], sizeof(buf) - 1);
+            strncat(buf, " on\n", sizeof(buf) - 1);
             prg_writer_aux(ctx, buf);
         }
     }
