@@ -85,7 +85,7 @@ x52mfd will send back to called proggie x52pro joystick buttons states.
 Button name will follow 'on' or 'off' to indicate its state except 'modes' which have 3 states: 1,2 and 3
 Axis states are not supported 'cause I see no need in them atm.
 
-Button names cound be found in +libx52+ sources plus I made some by myself for HAT states.
+Button names cound be found in __libx52__ sources plus I've made some other by myself for HAT and MODE states.
 ### Button names:
 
     * BTN_TRIGGER
@@ -135,10 +135,12 @@ Button names cound be found in +libx52+ sources plus I made some by myself for H
     * BTN_HAT_SW
     * BTN_HAT_W
     * BTN_HAT_NW
-    * MODE
+    * *MODE*
+    * *CONNECTED*
+    * *DICONNECTED*
 
 ### Addition:
 
-There are to 'buttons' which could be send to a proggie: 'CONNECTED' and 'DICONNECTED'
+There are two 'buttons' which could be send to a proggie: 'CONNECTED' and 'DICONNECTED'
 indicating current joystick connection status. During diconnection no buttons will be sent and no
 led or mfd actions will be processed.
