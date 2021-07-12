@@ -29,15 +29,14 @@ static void sigchild(int sig) {
             exit(1);
         }
         if (WIFEXITED(ws))
-            plog("child %d exited, status=%d\n", child_pid, WEXITSTATUS(ws));
+            plog("main: child %d exited, status=%d\n", child_pid, WEXITSTATUS(ws));
         else if (WIFSIGNALED(ws))
-            plog("child %d killed by signal %d\n", child_pid, WTERMSIG(ws));
+            plog("main: child %d killed by signal %d\n", child_pid, WTERMSIG(ws));
     } while (!WIFEXITED(ws) && !WIFSIGNALED(ws));
 
     child_pid = 0;
 
     // inform threads to finish (in case of unexpected child death)
-    pthread_cond_signal(&ctx.connected_condvar);
     ctx.done = 1;
 
     return;
@@ -46,10 +45,9 @@ static void sigchild(int sig) {
 // main signal handler
 static void sigterm(int sig) {
 
-    plog("got signal %d", sig);
+    plog("main: got signal %d\n", sig);
 
     // inform threads to finish (cleanups() will handle running child)
-    pthread_cond_signal(&ctx.connected_condvar);
     ctx.done = 1;
 }
 
@@ -59,14 +57,14 @@ static void cleanups(void) {
 
     // kill child and wait for it to die
     if (child_pid > 0) {
-        plog("terminating child %d\n", child_pid);
+        plog("main: terminating child %d\n", child_pid);
         if (! kill(child_pid, SIGTERM))
             pause();
         else
             perror("kill()");
     }
 
-    plog("exiting\n");
+    plog("main: exiting\n");
 }
 
 // show help
@@ -96,6 +94,11 @@ int main(int argc, char *argv[], char *envp[]){
     if (prg_sopen(argv, envp, fds, &child_pid))
         return 1;
 
+    // init threads context
+    ctx.infd = fds[0];
+    ctx.outfd = fds[1];
+    pthread_mutex_init(&ctx.mutex, NULL);
+
     // setup signals handlers
     signal(SIGCHLD, sigchild);
     signal(SIGTERM, sigterm);
@@ -110,14 +113,6 @@ int main(int argc, char *argv[], char *envp[]){
 
     // setup clean exit
     atexit(cleanups);
-
-    // init threads context
-    ctx.infd = fds[0];
-    ctx.outfd = fds[1];
-    ctx.connected = 0;
-    ctx.done = 0;
-    pthread_cond_init(&ctx.connected_condvar, NULL);
-    pthread_mutex_init(&ctx.mutex, NULL);
 
     // start threads for connector, reader and writer
     pthread_create(&threads[0], NULL, joy_connector, (void *)&ctx);

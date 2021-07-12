@@ -12,6 +12,9 @@
 
 // print log message to stderr
 void plog(char *fmt, ...) {
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&mutex);
+
     va_list ap;
     time_t now = time(NULL);
     char format[26 + 1 + strlen(fmt)];
@@ -30,5 +33,6 @@ void plog(char *fmt, ...) {
     vfprintf(stderr, format, ap);
     va_end(ap);
 
+    pthread_mutex_unlock(&mutex);
     return;
 }
