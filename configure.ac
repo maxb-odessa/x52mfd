@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([x52mfd], [0.1.0], [maxb@tutamail.com])
+AC_INIT([x52mfd],[0.1.0],[maxb@tutamail.com])
 AC_CONFIG_SRCDIR([include/x52mfd.h])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_FILES([Makefile])
