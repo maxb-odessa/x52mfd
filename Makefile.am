@@ -17,3 +17,7 @@ x52mfd_CFLAGS	=	-Wall -Werror -I$(top_srcdir)/include $(X52LIB_CFLAGS)
 x52mfd_LDFLAGS	=	
 x52mfd_LDADD	=	$(LIBX52_LIBS) -lx52io
 
+SUBDIRS			=	$(subdirs)
+DIST_SUBDIRS	=	$(SUBDIRS)
+
+
