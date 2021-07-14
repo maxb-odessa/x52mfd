@@ -10,20 +10,25 @@ AC_CONFIG_FILES([Makefile])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-CFLAGS="-std=c11 -g -ggdb -O0"
+CFLAGS="-std=gnu11 -g -ggdb -O0 -Wall -Werror"
 
 # Checks for programs.
 AC_PROG_CC
 
-# Checks for libraries.
-PKG_CHECK_MODULES([PCRE], [libpcre >= 8.0.0], [], AC_MSG_ERROR([pcre >= 8.0.0 required]))
-
 
 # Checks for header files.
+AC_CHECK_HEADER_STDBOOL
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+
+# Checks for libraries.
+PKG_CHECK_MODULES([PCRE], [libpcre >= 8.0.0], [], AC_MSG_ERROR([pcre >= 8.0.0 required]))
+
+AC_CHECK_HEADERS([xdo.h])
+AC_CHECK_LIB([xdo], [xdo_new])
 
 
 

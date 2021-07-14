@@ -31,7 +31,7 @@ AC_CHECK_HEADERS([pthread.h stdarg.h])
 PKG_CHECK_MODULES([LIBX52], [libx52 >= 0.2.1], [], AC_MSG_ERROR([libx52 >= 0.2.1 required (get it here: https://github.com/nirenjan/x52pro-linux.git)]))
 
 
-AC_CONFIG_SUBDIRS([games/ElDa])
+AC_CONFIG_SUBDIRS([games/elda])
 
 AC_OUTPUT
 
