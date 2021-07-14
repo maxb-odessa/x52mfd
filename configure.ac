@@ -10,7 +10,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_PREFIX_DEFAULT([$HOME/.local])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-CFLAGS="-std=c11 -g -ggdb -O0"
+CFLAGS="-std=gnu11 -g -ggdb -O0 -Wall -Werror"
 
 # Checks for programs.
 AC_PROG_CC

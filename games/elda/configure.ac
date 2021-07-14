@@ -18,7 +18,7 @@ AC_PROG_CC
 
 # Checks for header files.
 AC_CHECK_HEADER_STDBOOL
-
+AC_CHECK_HEADERS([stdarg.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -27,9 +27,9 @@ AC_CHECK_HEADER_STDBOOL
 # Checks for libraries.
 PKG_CHECK_MODULES([PCRE], [libpcre >= 8.0.0], [], AC_MSG_ERROR([pcre >= 8.0.0 required]))
 
-AC_CHECK_HEADERS([xdo.h])
-AC_CHECK_LIB([xdo], [xdo_new])
-
+AC_CHECK_HEADERS([xdo.h], [], [AC_MSG_ERROR(['libxdo-devel' required, please install it])])
+AC_CHECK_LIB([xdo], [xdo_new], [], [AC_MSG_ERROR(['libxdo' required, please install it])])
 
 
 AC_OUTPUT
+

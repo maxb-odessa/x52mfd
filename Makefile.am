@@ -13,7 +13,7 @@ x52mfd_SOURCES	=	src/main.c		\
 					src/plog.c		\
 					include/x52mfd.h
 
-x52mfd_CFLAGS	=	-Wall -Werror -I$(top_srcdir)/include $(X52LIB_CFLAGS)
+x52mfd_CFLAGS	=	-I$(top_srcdir)/include $(X52LIB_CFLAGS)
 x52mfd_LDFLAGS	=	
 x52mfd_LDADD	=	$(LIBX52_LIBS) -lx52io
 

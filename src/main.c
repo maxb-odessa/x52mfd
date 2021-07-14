@@ -75,7 +75,7 @@ static void show_help(char *me) {
     else
         me2 ++;
     printf("This is '" PACKAGE_STRING "', send bugs and other to <" PACKAGE_BUGREPORT ">\n"
-            "Usage:\n%s <progname> [progargs]\n", me2);
+            "Usage:\n\t%s <progname> [progargs]\n", me2);
 }
 
 // the main part, obviousely
