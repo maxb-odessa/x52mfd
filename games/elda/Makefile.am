@@ -11,6 +11,8 @@ elda_DATA				=	$(EXTRA_DIST)
 elda_SOURCES			=	src/elda.c		\
 							src/conf.c		\
 							src/plog.c		\
+							src/events.c	\
+							src/actions.c	\
 							src/cJSON.c		\
 							include/elda.h	\
 							include/cJSON.h

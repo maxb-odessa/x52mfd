@@ -16,10 +16,9 @@
 
 // simple list node
 typedef struct list {
-    void *data;
+    void        *data;
     struct list *next;
 } list_t;
-
 
 // configured variables
 typedef struct {
@@ -27,28 +26,29 @@ typedef struct {
     char *value;
 } variable_t;
 
-// xdo action
-typedef char *action_xdo_t;
+// action types
+typedef enum {
+    X52_ACTION,
+    XDO_ACTION,
+} ACTION_TYPE;
 
-// x52pro action
-typedef char *action_x52_t;
+// action
+typedef struct {
+    ACTION_TYPE type;
+    char        *action;
+} action_t;
 
 // event types
 typedef enum {
     JOURNAL_EVENT,
-    BUTTON_EVENT,
+    JOYOUT_EVENT,
 } EVENT_TYPE;
-
 
 // event
 typedef struct {
-    EVENT_TYPE type;
-    union {
-        pcre *journal;
-        char *button;
-    } pattern;
-    list_t *x52_actions;
-    list_t *xdo_actions;
+    EVENT_TYPE  type;
+    pcre        *pattern;
+    list_t      *actions;
 } event_t;
 
 // logger
@@ -61,9 +61,13 @@ event_t *conf_find_event(EVENT_TYPE type, char *pattern);
 
 // get vars and events
 char *conf_find_var(char *name);
-event_t *conf_match_event(EVENT_TYPE type, char *evstring, char **subs);
+event_t *conf_match_event(EVENT_TYPE type, char *evstring, char *subs[]);
 
+// events loop
+bool events_loop(void);
 
+// actions
+bool exec_actions(list_t *aclist, char *buf, char *subs[]);
 
 #endif //ELDA_H_INCLUDED
 

@@ -36,8 +36,13 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
+    // start events loop
+    if (events_loop() == false) {
+        plog("failed to start events loop\n");
+        return 3;
+    }
 
-
+    // done
     return 0;
 }
 
