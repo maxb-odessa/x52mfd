@@ -83,6 +83,7 @@ static variable_t *add_variable(char *name, char *value) {
 
     // add to list head
     lp->next = variables;
+    variables = lp;
 
     return (variable_t *)lp->data;
 }
@@ -120,6 +121,7 @@ static event_t *add_event(EVENT_TYPE type, char *pattern) {
 
     // add to list head
     lp->next = events;
+    events = lp;
 
     return evp;
 }
