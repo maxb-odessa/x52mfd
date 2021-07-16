@@ -36,7 +36,7 @@ char *conf_find_var(char *name) {
 // find matching event and return its struct (or NULL)
 // also will fill '**subs' array with matched subpatterns in case of regex
 // 'subs' must be freed by caller
-event_t *conf_match_event(EVENT_TYPE type, char *evstring, char **subs) {
+event_t *conf_match_event(EVENT_TYPE type, char *evstring, char ***subs, int *subs_num) {
     list_t *lp = events;
     event_t *evp;
 
@@ -49,8 +49,9 @@ event_t *conf_match_event(EVENT_TYPE type, char *evstring, char **subs) {
             int ovector[30];
             int rc = pcre_exec(evp->pattern, NULL, evstring, strlen(evstring), 0, 0, ovector, 30);
             if (rc >= 0) {
+                *subs_num = rc;
                 if (rc > 0)
-                    pcre_get_substring_list(evstring, ovector, rc, (const char ***)&subs);
+                    pcre_get_substring_list(evstring, ovector, rc, (const char ***)subs);
                 return evp;
             }
         }

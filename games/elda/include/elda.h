@@ -61,13 +61,13 @@ event_t *conf_find_event(EVENT_TYPE type, char *pattern);
 
 // get vars and events
 char *conf_find_var(char *name);
-event_t *conf_match_event(EVENT_TYPE type, char *evstring, char *subs[]);
+event_t *conf_match_event(EVENT_TYPE type, char *evstring, char ***subs, int *subs_num);
 
 // events loop
 bool events_loop(void);
 
 // actions
-bool exec_actions(list_t *aclist, char *buf, char *subs[]);
+bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num);
 
 #endif //ELDA_H_INCLUDED
 

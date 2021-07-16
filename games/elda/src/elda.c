@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 
     // start events loop
     if (events_loop() == false) {
-        plog("failed to start events loop\n");
+        plog("events loop failed\n");
         return 3;
     }
 

@@ -59,45 +59,72 @@ static char *find_journal_file() {
 }
 
 // open journal file and return its fd
-static int get_journal_fd(char *journal_file) {
-    int jfd;
+static int open_journal(char *journal_file) {
+    int fd;
 
     // open journal file
-    jfd = open(journal_file, O_RDONLY);
-    if (jfd < 0) {
+    fd = open(journal_file, O_RDONLY | O_NONBLOCK);
+    if (fd < 0)
         plog("failed to open journal file '%s': %s\n", journal_file, strerror(errno));
-        return -1;
-    }
-
-    // seel journal file to its end
-    lseek(jfd, 0, SEEK_END);
+    else
+        // seel journal file to its end
+        lseek(fd, 0, SEEK_END);
 
     // good, return the fd
-    return -1;
+    return fd;
 }
 
 
-#define FD_JOYOUT  0
-#define FD_JOURNAL 1
+// find event and execute it
+static bool process_event(EVENT_TYPE evtype, char *buf) {
+    event_t *evp;
+    char **subs;
+    int subs_num = 0;
+    bool ok = true;
+
+
+    // match buf over events
+    evp = conf_match_event(evtype, buf, &subs, &subs_num);
+    if (! evp)
+        return ok;
+
+    // event matched - execute its actions
+    ok = exec_actions(evp->actions, buf, subs, subs_num);
+
+    // cleanups
+    if (subs_num > 0)
+        pcre_free_substring_list((const char **)subs);
+
+    // done
+    return ok;
+}
+
+
+#define FD_JOYOUT_ID    0
+#define FD_JOURNAL_ID   1
+
+#define BUFSIZE    65535
 
 // main events listening loop
 // read events from journal and stdin and execute associated actions
 bool events_loop(void) {
     char *journal_file;
-    char buf[65536] = {0,}; // should be large enuff to hold whole event string from stdin or journal file
-    event_t *evp;
-    char *subs[10]; // there can be not more than 10 subs, from $0 to $9
+    char buf[BUFSIZE] = {0,}; // should be large enuff to hold whole event string from stdin or journal file
+    size_t buflen = 0;
     bool go_on = true;
     struct pollfd pfds[2]; // 0 for stdin (joyout), 1 for journal
-    int nfds = 1;
+    int nfds;
+    char *nlp;
+    int rc;
 
     // prepare epoll() struct
     // stdin is always available but not journal
     // so we'll wait for a journal to appear in the main loop
-    pfds[FD_JOYOUT].fd = fileno(stdin);
-    pfds[FD_JOYOUT].events = POLLIN;
-    pfds[FD_JOURNAL].fd = -1;
-    pfds[FD_JOURNAL].events = POLLIN;
+    pfds[FD_JOYOUT_ID].fd = fileno(stdin);
+    pfds[FD_JOYOUT_ID].events = POLLIN;
+    pfds[FD_JOURNAL_ID].fd = -1;
+    pfds[FD_JOURNAL_ID].events = POLLIN;
+    nfds = 1; // journal fd is not ready yet
 
     // init journal reading
     journal_file = find_journal_file();
@@ -110,65 +137,101 @@ bool events_loop(void) {
     plog("joyout  - watching 'stdin'\n");
 
     // poll for events
-    while (go_on) {
+    while (go_on && nfds > 0) {
 
         // get journal fd if we can
-        if (pfds[FD_JOURNAL].fd < 0)
-            pfds[FD_JOURNAL].fd = get_journal_fd(journal_file);
-        if (pfds[FD_JOURNAL].fd > 0)
-            nfds = 2;
-        else
-            nfds = 1;
+        if (pfds[FD_JOURNAL_ID].fd < 0) {
+            pfds[FD_JOURNAL_ID].fd = open_journal(journal_file);
+            if (pfds[FD_JOURNAL_ID].fd > 0)
+                nfds = 2;
+        }
 
         // wait for events
+        // NOTE:
+        // poll() on regular files always returns ready descriptor, so
+        // all the code below is not effective
         if (poll(pfds, nfds, -1) < 0) {
             plog("poll() failed: %s\n", strerror(errno));
             return false;
         }
 
+        // let's sleep for a while to reduce cpu usage cased by poll() above
+        usleep(30 * 1000); // 30ms
+
+
         // got events - process them
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < nfds; i ++) {
 
             // no event on this fd - skip it
             if (pfds[i].revents == 0 || !(pfds[i].revents & POLLIN))
                 continue;
 
-            // read data from fd
-            if (read(pfds[i].fd, buf, sizeof(buf) - 1) <= 0) {
-                close(pfds[i].fd);
-                pfds[i].fd = -pfds[i].fd;
-                continue;
+            // a CRUTCH:
+            // in case of journal fd we'll try to read 1 char of data from it.
+            // if we could - rewind fd position 1 char back for next read() call to get all the data
+            if (i == FD_JOURNAL_ID) {
+                char tbuf[2];
+                rc = read(pfds[i].fd, tbuf, 1);
+                if (rc == 1)
+                    lseek(pfds[i].fd, -1, SEEK_CUR);
+                else
+                    continue;
             }
 
-            // find matching event
-            evp = NULL;
-            if (i == FD_JOYOUT)
-                evp = conf_match_event(JOYOUT_EVENT, buf, subs);
-            else if (i == FD_JOURNAL)
-                evp = conf_match_event(JOURNAL_EVENT, buf, subs);
+            // will try to read fd by lines
 
-            // not matching event found
-            if (! evp)
-                continue;
+            // shift the buf
+            // do this before any fd reading to fetch all the lines
+            // that are already accumulated in the buffer
+            buflen = strlen(buf);
+            if (buflen > 0) {
+                memmove(buf, buf + buflen + 1, BUFSIZE);
+                buflen = strlen(buf);
+            }
 
-            // event matched - process it
-            go_on = exec_actions(evp->actions, buf, subs);
+            // fetch next data portion from fd - append it to what is already present in buf
+            rc = read(pfds[i].fd, buf + buflen, BUFSIZE - buflen);
 
-            // cleanups
-            for (int i = 0; i < sizeof(subs)/sizeof(subs[0]); i ++) {
-                if (subs[i]) {
-                    free(subs[i]);
-                    subs[i] = NULL;
+            // no data read
+            if (rc <= 0) {
+                // fd closed? failed?
+                if (rc == -1) {
+                    // TODO questionable part below - is it really needed?
+                    if (i == FD_JOYOUT_ID)
+                        plog("'stdin' closed\n");
+                    else if (i == FD_JOURNAL_ID)
+                        plog("'%s' closed\n", journal_file);
+                    close(pfds[i].fd);
+                    pfds[i].fd = -1;
+                    pfds[i].events = 0;
+                    nfds --;
                 }
-            }
-            buf[0] = '\0';
+                continue;
+            } 
+
+            // search for next '\n'
+            nlp = strchr(buf, '\n');
+
+            // no newline yet - continue accumulating line in buf
+            if (! nlp)
+                continue;
+            // got newline - cut the buf on it
+            else 
+                *nlp = '\0';
+
+            // find matching event and execute it
+            if (i == FD_JOYOUT_ID)
+                go_on = process_event(JOYOUT_EVENT, buf);
+            else if (i == FD_JOURNAL_ID)
+                go_on = process_event(JOURNAL_EVENT, buf);
+
 
         } // for(fds...)
 
-    } // while(!exit...)
+    } // while(go_on...)
 
     // we're done
-    return false;
+    return go_on;
 }
 
 
