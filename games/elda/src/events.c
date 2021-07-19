@@ -12,6 +12,7 @@
 #include <fnmatch.h>
 #include <dirent.h>
 #include <assert.h>
+#include <ctype.h>
 
 
 // find freshest journal file
@@ -105,52 +106,46 @@ static bool process_event(EVENT_TYPE evtype, char *buf) {
 
 #define BUFSIZE    65535
 
+
 // main events listening loop
 // read events from journal and stdin and execute associated actions
 bool events_loop(void) {
     char *journal_file;
-    char buf[BUFSIZE] = {0,}; // should be large enuff to hold whole event string from stdin or journal file
+    char buf[BUFSIZE + 1] = {0,}; // should be large enuff to hold whole event string from stdin or journal file
     size_t buflen = 0;
     bool go_on = true;
     struct pollfd pfds[2]; // 0 for stdin (joyout), 1 for journal
-    int nfds;
     char *nlp;
     int rc;
 
-    // prepare epoll() struct
-    // stdin is always available but not journal
-    // so we'll wait for a journal to appear in the main loop
-    pfds[FD_JOYOUT_ID].fd = fileno(stdin);
-    pfds[FD_JOYOUT_ID].events = POLLIN;
-    pfds[FD_JOURNAL_ID].fd = -1;
-    pfds[FD_JOURNAL_ID].events = POLLIN;
-    nfds = 1; // journal fd is not ready yet
-
-    // init journal reading
+    // open and setup journal for poll()
     journal_file = find_journal_file();
     if (! journal_file) {
         plog("failed to read journal file\n");
         return false;
     }
 
-    plog("journal - watching '%s'\n", journal_file);
-    plog("joyout  - watching 'stdin'\n");
+    pfds[FD_JOURNAL_ID].fd = open_journal(journal_file);
+    if (pfds[FD_JOURNAL_ID].fd < 0) {
+        plog("failed to open journal\n");
+        return false;
+    }
+    pfds[FD_JOURNAL_ID].events = POLLIN;
+    plog("journal: watching '%s'\n", journal_file);
+
+    // setup stdin for poll()
+    pfds[FD_JOYOUT_ID].fd = fileno(stdin);
+    pfds[FD_JOYOUT_ID].events = POLLIN;
+    plog("joyout: watching 'stdin'\n");
 
     // poll for events
-    while (go_on && nfds > 0) {
-
-        // get journal fd if we can
-        if (pfds[FD_JOURNAL_ID].fd < 0) {
-            pfds[FD_JOURNAL_ID].fd = open_journal(journal_file);
-            if (pfds[FD_JOURNAL_ID].fd > 0)
-                nfds = 2;
-        }
+    while (go_on) {
 
         // wait for events
         // NOTE:
         // poll() on regular files always returns ready descriptor, so
         // all the code below is not effective
-        if (poll(pfds, nfds, -1) < 0) {
+        if (poll(pfds, 2, -1) < 0) {
             plog("poll() failed: %s\n", strerror(errno));
             return false;
         }
@@ -160,7 +155,7 @@ bool events_loop(void) {
 
 
         // got events - process them
-        for (int i = 0; i < nfds; i ++) {
+        for (int i = 0; i < 2; i ++) {
 
             // no event on this fd - skip it
             if (pfds[i].revents == 0 || !(pfds[i].revents & POLLIN))
@@ -170,7 +165,7 @@ bool events_loop(void) {
             // in case of journal fd we'll try to read 1 char of data from it.
             // if we could - rewind fd position 1 char back for next read() call to get all the data
             if (i == FD_JOURNAL_ID) {
-                char tbuf[2];
+                char tbuf[1];
                 rc = read(pfds[i].fd, tbuf, 1);
                 if (rc == 1)
                     lseek(pfds[i].fd, -1, SEEK_CUR);
@@ -178,52 +173,42 @@ bool events_loop(void) {
                     continue;
             }
 
-            // will try to read fd by lines
-
-            // shift the buf
-            // do this before any fd reading to fetch all the lines
-            // that are already accumulated in the buffer
-            buflen = strlen(buf);
-            if (buflen > 0) {
-                memmove(buf, buf + buflen + 1, BUFSIZE);
-                buflen = strlen(buf);
-            }
-
             // fetch next data portion from fd - append it to what is already present in buf
-            rc = read(pfds[i].fd, buf + buflen, BUFSIZE - buflen);
-
+            rc = read(pfds[i].fd, buf + buflen, BUFSIZE - buflen - 1);
             // no data read
-            if (rc <= 0) {
-                // fd closed? failed?
-                if (rc == -1) {
-                    // TODO questionable part below - is it really needed?
-                    if (i == FD_JOYOUT_ID)
-                        plog("'stdin' closed\n");
-                    else if (i == FD_JOURNAL_ID)
-                        plog("'%s' closed\n", journal_file);
-                    close(pfds[i].fd);
-                    pfds[i].fd = -1;
-                    pfds[i].events = 0;
-                    nfds --;
+            if (rc <= 0) 
+                continue;
+
+            // draw the buf line-by-line
+            while (1) {
+
+                // shift the buf
+                // do this before any fd reading to fetch all the lines
+                // that are already accumulated in the buffer
+                if (buflen > 0) {
+                    memmove(buf, buf + buflen, BUFSIZE - buflen);
+                    buflen = strlen(buf);
                 }
-                continue;
-            } 
 
-            // search for next '\n'
-            nlp = strchr(buf, '\n');
+                // search for next '\n'
+                nlp = strchr(buf, '\n');
+                // no newline yet - continue accumulating line in buf
+                if (! nlp)
+                    break;
+                // got newline - cut the buf on it
+                else
+                    *nlp ++ = '\0';
 
-            // no newline yet - continue accumulating line in buf
-            if (! nlp)
-                continue;
-            // got newline - cut the buf on it
-            else 
-                *nlp = '\0';
+                buflen = nlp - buf;
+                plog("NLP2: <%s>\n", buf);
 
-            // find matching event and execute it
-            if (i == FD_JOYOUT_ID)
-                go_on = process_event(JOYOUT_EVENT, buf);
-            else if (i == FD_JOURNAL_ID)
-                go_on = process_event(JOURNAL_EVENT, buf);
+                // find matching event and execute it
+                if (i == FD_JOYOUT_ID)
+                    go_on = process_event(JOYOUT_EVENT, buf);
+                else if (i == FD_JOURNAL_ID)
+                    go_on = process_event(JOURNAL_EVENT, buf);
+
+            }
 
 
         } // for(fds...)

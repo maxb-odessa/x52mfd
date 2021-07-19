@@ -69,6 +69,9 @@ bool events_loop(void);
 // actions
 bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num);
 
+// exec xdo actions
+bool call_xdo(char *str);
+
 #endif //ELDA_H_INCLUDED
 
 

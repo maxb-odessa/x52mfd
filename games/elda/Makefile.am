@@ -13,6 +13,7 @@ elda_SOURCES			=	src/elda.c		\
 							src/plog.c		\
 							src/events.c	\
 							src/actions.c	\
+							src/xdo.c		\
 							src/cJSON.c		\
 							include/elda.h	\
 							include/cJSON.h

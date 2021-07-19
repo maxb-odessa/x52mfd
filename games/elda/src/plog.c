@@ -1,37 +1,39 @@
-/*
-   a Primitive LOGger - log messages to stderr
-   */
-
-#include "elda.h"
 
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "elda.h"
 
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #endif
 
+#define PROGID "(elda) "
 
 // print log message to stderr
 void plog(char *fmt, ...) {
+
     va_list ap;
     time_t now = time(NULL);
-    char format[26 + 1 + strlen(fmt)];
+    char format[26 + 1 + sizeof(PROGID) + 1 + strlen(fmt)];
 
     va_start(ap, fmt);
 
     // get current time
     ctime_r(&now, format);
-    format[24] = '|';
-    format[25] = '\0';
+    format[24] = '\0';
 
     // make new format
-    strcat(format, fmt); 
+    strcat(format, PROGID);
+    strcat(format, fmt);
 
 
     vfprintf(stderr, format, ap);
     va_end(ap);
+
+    fsync(fileno(stderr));
 
     return;
 }

@@ -64,6 +64,7 @@ event_t *conf_match_event(EVENT_TYPE type, char *evstring, char ***subs, int *su
     return NULL;
 }
 
+
 // add new variable to the list
 static variable_t *add_variable(char *name, char *value) {
     list_t *lp;
@@ -89,6 +90,7 @@ static variable_t *add_variable(char *name, char *value) {
     return (variable_t *)lp->data;
 }
 
+
 // compose and add new event to the list
 static event_t *add_event(EVENT_TYPE type, char *pattern) {
     list_t *lp;
@@ -96,9 +98,11 @@ static event_t *add_event(EVENT_TYPE type, char *pattern) {
     const char *errstr;
     int errpos;
 
-    // check
-    if (! pattern)
+    // checks:
+    if (! pattern || ! *pattern) {
+        plog("event pattern missed\n");
         return NULL;
+    }
 
     // create new event entry
     evp = (event_t *)calloc(1, sizeof(event_t));
@@ -233,13 +237,18 @@ static CONF_ENTRY_TYPE parse_line(char *buf, EVENT_TYPE *evtype, ACTION_TYPE *ac
     } while (*pp && isspace(*pp));
 
     // check
-    if (*pp == '\0') {
-        plog("icomplete '%s' token\n", bufp);
+    if (! *pp) {
+        plog("incomplete '%s' event definition\n", bufp);
         return CONF_ENTRY_TYPE_INVALID;
     }
 
     // guess line type: variable, event or action
     if (! strcmp("var", bufp)) {
+
+        if (! *pp) {
+            plog("variable name not set\n");
+            return CONF_ENTRY_TYPE_INVALID;
+        }
 
         // save var name and advance to its (possible) value
         tokens[0] = pp;
@@ -300,7 +309,8 @@ bool conf_read_file(char *confpath) {
     if (! fp) {
         plog("failed to open config file '%s': %s\n", confpath, strerror(errno));
         return false;
-    }
+    } else
+        plog("reading config file '%s'\n", confpath);
 
     // read file by lines
     while (fgets(buf, sizeof(buf) - 1, fp) != NULL) {

@@ -15,9 +15,9 @@ int prg_writer_aux(ctx_t *ctx, char *data) {
     static pthread_mutex_t wmutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&wmutex);
 
+    int rc = 1;
     fd_set outfds;
     struct timeval tv = {0, LOOP_DELAY_US};
-    int rc;
 
     // can we write?
     FD_ZERO(&outfds);
@@ -34,6 +34,7 @@ int prg_writer_aux(ctx_t *ctx, char *data) {
         rc = write(ctx->outfd, data, strlen(data));
         if (rc <= 0)
             plog("writer: write to proggie failed: %s\n", strerror(errno));
+        fsync(ctx->outfd);
     }
 
 done:
@@ -46,14 +47,14 @@ done:
 // read joy events and send them to proggie
 void * prg_writer(void *arg) {
     ctx_t *ctx = (ctx_t *)arg;
-    int disco_sent = 0, conn_sent = 0;
+    int disco_sent = 0, conn_sent = 0, rc;
     libx52io_report prev_report = {{0}, {0}, 0, 0};
     libx52io_report curr_report = {{0}, {0}, 0, 0};
 
     while (! ctx->done) {
 
         // inform a proggie on our joy connection status
-        if (! ctx->x52dev_ok || ! ctx->x52ctx_ok) {
+        if (! ctx->x52ro_ok || ! ctx->x52wr_ok) {
             if (! disco_sent) {
                 prg_writer_aux(ctx, "DISCONNECTED\n");
                 disco_sent = 1;
@@ -70,14 +71,17 @@ void * prg_writer(void *arg) {
         }
 
         // wait for joystick events
-        if (libx52io_read_timeout(ctx->x52ctx, &curr_report, LOOP_DELAY_US) != LIBX52IO_SUCCESS)
-            continue;
+        rc = libx52io_read_timeout(ctx->x52ro, &curr_report, LOOP_DELAY_US);
+        if (rc == LIBX52IO_SUCCESS) {
 
-        // see what changed (buttons and such) and report them to proggie
-        send_changes(ctx, &curr_report, &prev_report);
+            // see what changed (buttons and such) and report them to proggie
+            send_changes(ctx, &curr_report, &prev_report);
 
-        // save prev joy state
-        prev_report = curr_report;
+            // save prev joy state
+            prev_report = curr_report;
+
+        } else if (rc != LIBX52IO_ERROR_TIMEOUT)
+            ctx->x52ro_ok = 0;
 
     }
 

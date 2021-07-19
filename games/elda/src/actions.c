@@ -68,14 +68,16 @@ bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num) {
     // walk through configured actions and execute them
     while (lp) {
         ap = (action_t *)lp->data;
-        plog("=> %d <%s>\n", ap->type, ap->action);
+        //plog("=> %d <%s>\n", ap->type, ap->action);
         preped = replace_subs(ap->action, subs, subs_num);
         switch (ap->type) {
             case X52_ACTION :
-                puts(preped);
+                puts(preped); // this is simple: just send x52 action string to stdout
+                fflush(stdout);
                 break;
             case XDO_ACTION :
-                break; // TODO call xdo here
+                call_xdo(preped);
+                break;
             default :
                 break;
         }

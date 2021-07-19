@@ -12,10 +12,10 @@
 
 // threads context for connector, reader and writer
 typedef struct {
-    libx52_device       *x52dev;    // joy device for writing
-    _Atomic int         x52dev_ok;  // is joy dev connected for writing
-    libx52io_context    *x52ctx;    // joy ctx for reading
-    _Atomic int         x52ctx_ok;  // is joy ctx connected reading
+    libx52_device       *x52wr;     // joy device for writing
+    _Atomic int         x52wr_ok;   // is joy dev connected for writing
+    libx52io_context    *x52ro;     // joy ctx for reading
+    _Atomic int         x52ro_ok;   // is joy dev connected for reading
     int                 infd;       // prog stdout to us
     int                 outfd;      // us to prog stdin
     _Atomic int         done;       // threads must exit

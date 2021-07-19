@@ -58,7 +58,7 @@ void *prg_reader(void *arg) {
 }
 
 
-
+// TODO fix bufread
 // read command from prog fd
 // one command - one line, so we'll accumulate data until '\n' or EOF
 int read_cmd(ctx_t *ctx, char *buf) {
@@ -228,7 +228,7 @@ static int cmd_led(ctx_t *ctx, char *cmd[]) {
 
     // set led state
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_led_state(ctx->x52dev, led, state);
+    rc = libx52_set_led_state(ctx->x52wr, led, state);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -278,7 +278,7 @@ static int cmd_bri(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_brightness(ctx->x52dev, mfd, bri);
+    rc = libx52_set_brightness(ctx->x52wr, mfd, bri);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -308,7 +308,7 @@ static int cmd_mfd(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_text(ctx->x52dev, line, cmd[2], strlen(cmd[2]));
+    rc = libx52_set_text(ctx->x52wr, line, cmd[2], strlen(cmd[2]));
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -336,7 +336,7 @@ static int cmd_blink(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_blink(ctx->x52dev, blink);
+    rc = libx52_set_blink(ctx->x52wr, blink);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -364,7 +364,7 @@ static int cmd_shift(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_shift(ctx->x52dev, shift);
+    rc = libx52_set_shift(ctx->x52wr, shift);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -416,9 +416,9 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_clock(ctx->x52dev, time(NULL), is_gmt);
-    rc += libx52_set_clock_format(ctx->x52dev, LIBX52_CLOCK_1, hr12_24);
-    rc += libx52_set_date_format(ctx->x52dev, format);
+    rc = libx52_set_clock(ctx->x52wr, time(NULL), is_gmt);
+    rc += libx52_set_clock_format(ctx->x52wr, LIBX52_CLOCK_1, hr12_24);
+    rc += libx52_set_date_format(ctx->x52wr, format);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -466,8 +466,8 @@ static int cmd_offset(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_clock_timezone(ctx->x52dev, clcid, offset);
-    rc += libx52_set_clock_format(ctx->x52dev, clcid, hr12_24);
+    rc = libx52_set_clock_timezone(ctx->x52wr, clcid, offset);
+    rc += libx52_set_clock_format(ctx->x52wr, clcid, hr12_24);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -511,8 +511,8 @@ static int cmd_time(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_time(ctx->x52dev, hr, min);
-    rc += libx52_set_clock_format(ctx->x52dev, LIBX52_CLOCK_1, hr12_24);
+    rc = libx52_set_time(ctx->x52wr, hr, min);
+    rc += libx52_set_clock_format(ctx->x52wr, LIBX52_CLOCK_1, hr12_24);
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -565,8 +565,8 @@ static int cmd_date(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_date(ctx->x52dev, day, mon, year);
-    rc += libx52_set_date_format(ctx->x52dev, format);
+    rc = libx52_set_date(ctx->x52wr, day, mon, year);
+    rc += libx52_set_date_format(ctx->x52wr, format);
     pthread_mutex_unlock(&ctx->mutex);
 
     return 0;
@@ -577,7 +577,12 @@ static int cmd_update(ctx_t *ctx, char *cmd[]) {
     int rc;
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_update(ctx->x52dev);
+
+    rc = libx52_update(ctx->x52wr);
+    if (rc != LIBX52_SUCCESS) {
+        ctx->x52wr_ok = 0;
+    }
+
     pthread_mutex_unlock(&ctx->mutex);
 
     return rc;
@@ -588,7 +593,7 @@ static int cmd_update(ctx_t *ctx, char *cmd[]) {
 int execute_cmd(ctx_t *ctx, char *cmd[]) {
 
     // joy is not connected?
-    if (! ctx->x52dev_ok) {
+    if (! ctx->x52wr_ok) {
         //plog("reader: joystick is not connected\n");
         //prg_writer_aux(ctx, "DISCONNECTED\n"); // moved to writer
         return 1;
