@@ -374,7 +374,7 @@ static int cmd_shift(ctx_t *ctx, char *cmd[]) {
 // clock <local|gmt> <12hr|24hr> <ddmmyy|mmddyy|yymmdd>
 static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     int rc;
-    int is_gmt;
+    int is_local;
     libx52_clock_format hr12_24;
     libx52_date_format format;
 
@@ -385,9 +385,9 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
 
     // pick local or gmt
     if (! strcasecmp(cmd[1], "local"))
-        is_gmt = 0;
+        is_local = 1;
     else if (! strcasecmp(cmd[1], "gmt"))
-        is_gmt = 1;
+        is_local = 0;
     else {
         plog("reader: command '%s': invalid tz '%s', must be local or gmt\n", cmd[0], cmd[1]);
         return 1;
@@ -416,7 +416,7 @@ static int cmd_clock(ctx_t *ctx, char *cmd[]) {
     }
 
     pthread_mutex_lock(&ctx->mutex);
-    rc = libx52_set_clock(ctx->x52wr, time(NULL), is_gmt);
+    rc = libx52_set_clock(ctx->x52wr, time(NULL), is_local);
     rc += libx52_set_clock_format(ctx->x52wr, LIBX52_CLOCK_1, hr12_24);
     rc += libx52_set_date_format(ctx->x52wr, format);
     pthread_mutex_unlock(&ctx->mutex);

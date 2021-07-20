@@ -200,7 +200,6 @@ bool events_loop(void) {
                     *nlp ++ = '\0';
 
                 buflen = nlp - buf;
-                plog("NLP2: <%s>\n", buf);
 
                 // find matching event and execute it
                 if (i == FD_JOYOUT_ID)

@@ -1,3 +1,8 @@
 
-- INIT leds state
-- USLEEP and APPLY actions
+
+- clock not running. Update 1/s?
+- select/poll for stdin
+- inotify for journal file(s)
+- buffers in config
+- xdo
+
