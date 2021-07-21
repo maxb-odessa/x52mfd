@@ -176,7 +176,7 @@ typedef enum {
 } CONF_ENTRY_TYPE;
 
 // strip string form leading and trailing blanks
-static char *strip_string(char *str) {
+char *strip_string(char *str) {
     char *sp = str;
     size_t slen;
 

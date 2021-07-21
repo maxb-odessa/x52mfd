@@ -2,10 +2,8 @@
 #include "elda.h"
 
 #include <limits.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <sys/inotify.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -17,19 +15,20 @@
 #define BUFSIZE  65535
 
 struct journal_data {
-    char buf[BUFSIZE + 1];
-    char *journal_dir;
-    char *journal_file;
-    char *journal_pattern;
-    FILE *journal_fp;
-    int  inotify_fd;
+    char    buf[BUFSIZE + 1];
+    size_t  buflen;
+    char    *journal_dir;
+    char    *journal_file;
+    char    *journal_pattern;
+    int     journal_fd;
+    int     inotify_fd;
 };
 
 static struct journal_data jdata;
 
-#if 0
+
 // open journal file, close old one
-static bool reopen_journal_file1() {
+static bool reopen_journal_file() {
     int fd;
     char *jpath;
 
@@ -44,7 +43,7 @@ static bool reopen_journal_file1() {
     strcat(jpath, jdata.journal_file);
 
     // open the file
-    fd = open(jpath, O_RDONLY | O_NONBLOCK);
+    fd = open(jpath, O_RDONLY|O_NONBLOCK);
     if (fd < 0)
         plog("failed to open journal '%s': %s\n", jpath, strerror(errno));
     else
@@ -55,39 +54,6 @@ static bool reopen_journal_file1() {
         close(jdata.journal_fd);
 
     jdata.journal_fd = fd;
-
-    return true;
-}
-#endif
-
-
-// open journal file, close old one
-static bool reopen_journal_file() {
-    FILE *fp = NULL;
-    char *jpath;
-
-    // check
-    if (! jdata.journal_file)
-        return false;
-
-    jpath = malloc(strlen(jdata.journal_dir) + strlen(jdata.journal_file) + 2);
-    assert(jpath);
-    strcpy(jpath, jdata.journal_dir);
-    strcat(jpath, "/");
-    strcat(jpath, jdata.journal_file);
-
-    // open the file
-    fp = fopen(jpath, "r");
-    if (! fp)
-        plog("failed to open journal '%s': %s\n", jpath, strerror(errno));
-    else
-        fseek(fp, 0, SEEK_END);
-
-    // close old fd
-    if (jdata.journal_fp)
-        fclose(jdata.journal_fp);
-
-    jdata.journal_fp = fp;
 
     return true;
 }
@@ -135,48 +101,47 @@ bool journal_events_init(void) {
 bool journal_event_get(char **bufp) {
     char ievbuf[INOTIFY_BUF_LEN];
     ssize_t ievlen;
-    fd_set rfds;
-    struct timeval tv = { .tv_sec = 0, .tv_usec = EVENT_TIMEOUT_US };
+    struct pollfd pfds;
     int rc;
     const struct inotify_event *iev;
+    char *nlp;
 
-    // setup select(fd)
-    FD_ZERO(&rfds);
-    FD_SET(jdata.inotify_fd, &rfds);
+    // setup poll for inotify
+    pfds.fd = jdata.inotify_fd;
+    pfds.events = POLLIN;
 
     // wait for inotify events
-    rc = select(jdata.inotify_fd + 1, &rfds, NULL, NULL, &tv);
+    rc = poll(&pfds, 1, EVENT_TIMEOUT_MS);
     if (rc < 0) {
-        // failure
-        plog("select() failed: %s\n", strerror(errno));
+        plog("poll() failed: %s\n", strerror(errno));
         return false;
     } else if (rc == 0)
         // no event - ok
         return true;
 
+    // no event - return
+    if (! (pfds.revents & POLLIN))
+        return true;
 
-    // read inotify events from fd
-    ievlen = read(jdata.inotify_fd, ievbuf, INOTIFY_BUF_LEN);
+
+    // read inotify evens
+    ievlen = read(pfds.fd, ievbuf, INOTIFY_BUF_LEN);
     if (ievlen < 0) {
         plog("read() failed: %s\n", strerror(errno));
         return false;
     }
 
-    // examine inotify events
+    // examine inotify events: pick our current journal file
     for (char *ievptr = ievbuf; ievptr < ievbuf + ievlen; ievptr += INOTIFY_EV_SIZE + iev->len) {
 
         iev = (const struct inotify_event *)ievptr;
 
         // skip empty inotify event
-        if (iev->len == 0)
-            continue;
-
         // skip directory and non-modify inotify events
-        if ((iev->mask & IN_ISDIR) || ! (iev->mask & IN_MODIFY))
-            continue;
-
-        // ignore non-journal files
-        if (fnmatch(jdata.journal_pattern, iev->name, FNM_PATHNAME) != 0)
+        // skip non-journal files
+        if (iev->len == 0 || (iev->mask & IN_ISDIR) || 
+                !(iev->mask & IN_MODIFY) ||
+                fnmatch(jdata.journal_pattern, iev->name, FNM_PATHNAME))
             continue;
 
         // see if journal file name changed
@@ -196,33 +161,48 @@ bool journal_event_get(char **bufp) {
 
         }
 
-        tv.tv_sec = 0;
-        tv.tv_usec = EVENT_TIMEOUT_US;
-
-        // setup select(fd)
-        FD_ZERO(&rfds);
-        FD_SET(fileno(jdata.journal_fp), &rfds);
-
-        // wait for inotify events
-        rc = select(fileno(jdata.journal_fp) + 1, &rfds, NULL, NULL, &tv);
-        if (rc < 0) {
-            // failure
-            plog("select() failed: %s\n", strerror(errno));
-            return false;
-        } else if (rc == 0)
-            // no event - ok
-            return true;
-
-
-        // read line from journal file
-        if (fgets(jdata.buf, BUFSIZE, jdata.journal_fp) != NULL)
-            *bufp = jdata.buf;
-        plog("B: r:%d l:%d <%s>\n", rc, strlen(jdata.buf), jdata.buf);
-
-        // ignore the rest of inotify events
-        break;
-
     } //for(ievents...)
+
+
+    // poll for journal events
+    pfds.fd = jdata.journal_fd;
+    pfds.events = POLLIN;
+    if (poll(&pfds, 1, -1) < 0) {
+        plog("poll() failed: %s\n", strerror(errno));
+        return false;
+    }
+
+    // read events from journal
+    if (pfds.revents & POLLIN) {
+        rc = read(pfds.fd, jdata.buf + jdata.buflen, BUFSIZE - jdata.buflen);
+        if (rc < 0) {
+            plog("read() failed: %s\n", strerror(errno));
+            return false;
+        }
+    }
+
+    // it's ok if read() returned no data - we'll examine our buffer
+
+    // shift the buf
+    // do this before any fd reading to fetch all the lines
+    // that are already accumulated in the buffer
+    if (jdata.buflen > 0) {
+        memmove(jdata.buf, jdata.buf + jdata.buflen, BUFSIZE - jdata.buflen);
+        jdata.buflen = strlen(jdata.buf);
+    }
+
+    // search for next '\n'
+    nlp = strchr(jdata.buf, '\n');
+
+    // no newline yet - continue accumulating line in buf
+    if (! nlp)
+        *bufp = NULL;
+    else {
+        // got newline - cut the buf on it
+        *nlp ++ = '\0';
+        jdata.buflen = nlp - jdata.buf;
+        *bufp = jdata.buf;
+    }
 
     // done
     return true;

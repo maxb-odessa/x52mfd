@@ -48,7 +48,7 @@ bool joyout_event_get(char **bufp) {
     }
 
     // fetch next data portion from fd - append it to what is already present in buf
-    rc = read(0, buf + buflen, BUFSIZE - buflen - 1);
+    rc = read(0, buf + buflen, BUFSIZE - buflen);
     if (rc < 0) {
         plog("read(stdin) failed: %s\n", strerror(errno));
         return false;

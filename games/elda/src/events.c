@@ -8,14 +8,17 @@ static bool process_event(EVENT_TYPE evtype, char *buf) {
     char **subs;
     int subs_num = 0;
     bool ok = true;
-    plog("EV: <%s>\n", buf);
+    char *bufp;
+
+    bufp = strip_string(buf);
+
     // match buf over events
-    evp = conf_match_event(evtype, buf, &subs, &subs_num);
+    evp = conf_match_event(evtype, bufp, &subs, &subs_num);
     if (! evp)
         return ok;
 
     // event matched - execute its actions
-    ok = exec_actions(evp->actions, buf, subs, subs_num);
+    ok = exec_actions(evp->actions, bufp, subs, subs_num);
 
     // cleanups
     if (subs_num > 0)

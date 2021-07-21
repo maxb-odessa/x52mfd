@@ -56,7 +56,8 @@ typedef struct {
 } event_t;
 
 // events polling timeout
-#define EVENT_TIMEOUT_US   (30 * 1000)
+#define EVENT_TIMEOUT_MS   30
+#define EVENT_TIMEOUT_US   (EVENT_TIMEOUT_MS * 1000)
 
 // logger
 void plog(char *fmt, ...);
@@ -65,6 +66,7 @@ void plog(char *fmt, ...);
 int conf_read_file(char *fpath);
 char *conf_find_var(char *name);
 event_t *conf_find_event(EVENT_TYPE type, char *pattern);
+char *strip_string(char *str);
 
 // get vars and events
 char *conf_find_var(char *name);
