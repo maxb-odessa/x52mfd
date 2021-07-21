@@ -9,9 +9,11 @@ eldadir					=	$(sysconfdir)
 elda_DATA				=	$(EXTRA_DIST)
 
 elda_SOURCES			=	src/elda.c		\
-							src/conf.c		\
 							src/plog.c		\
+							src/conf.c		\
 							src/events.c	\
+							src/joyout.c	\
+							src/journal.c	\
 							src/actions.c	\
 							src/xdo.c		\
 							src/cJSON.c		\

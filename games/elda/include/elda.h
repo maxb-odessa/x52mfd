@@ -2,7 +2,9 @@
 #ifndef ELDA_H_INCLUDED
 #define ELDA_H_INCLUDED
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
@@ -29,7 +31,9 @@ typedef struct {
 // action types
 typedef enum {
     X52_ACTION,
+#ifdef WITH_XDO
     XDO_ACTION,
+#endif
 } ACTION_TYPE;
 
 // action
@@ -51,6 +55,9 @@ typedef struct {
     list_t      *actions;
 } event_t;
 
+// events polling timeout
+#define EVENT_TIMEOUT_US   (30 * 1000)
+
 // logger
 void plog(char *fmt, ...);
 
@@ -66,11 +73,21 @@ event_t *conf_match_event(EVENT_TYPE type, char *evstring, char ***subs, int *su
 // events loop
 bool events_loop(void);
 
+// joyout events handler
+bool joyout_events_init(void);
+bool joyout_event_get(char **bufp);
+
+// journal events handler
+bool journal_events_init(void);
+bool journal_event_get(char **bufp);
+
 // actions
 bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num);
 
+#ifdef WITH_XDO
 // exec xdo actions
 bool call_xdo(char *str);
+#endif
 
 #endif //ELDA_H_INCLUDED
 

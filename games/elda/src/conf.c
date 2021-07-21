@@ -280,16 +280,17 @@ static CONF_ENTRY_TYPE parse_line(char *buf, EVENT_TYPE *evtype, ACTION_TYPE *ac
         *actype = X52_ACTION;
         return CONF_ENTRY_TYPE_ACTION;
 
+#ifdef WITH_XDO
     } else if (! strcmp("xdo", bufp)) {
 
         tokens[0] = pp;
         *actype = XDO_ACTION;
         return CONF_ENTRY_TYPE_ACTION;
-
+#endif
     }
 
     // unknown line type
-    plog("unknown type '%s'\n", bufp);
+    plog("unknown action type '%s'\n", bufp);
     return CONF_ENTRY_TYPE_INVALID;
 }
 

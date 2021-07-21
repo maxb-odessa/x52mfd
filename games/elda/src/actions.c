@@ -75,9 +75,11 @@ bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num) {
                 puts(preped); // this is simple: just send x52 action string to stdout
                 fflush(stdout);
                 break;
+#ifdef WITH_XDO
             case XDO_ACTION :
                 call_xdo(preped);
                 break;
+#endif
             default :
                 break;
         }
