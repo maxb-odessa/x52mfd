@@ -3,7 +3,6 @@ ACLOCAL_AMFLAGS	=	-I m4
 
 bin_PROGRAMS	=	x52mfd
 
-include_HEADERS	=	include/x52mfd.h
 
 x52mfd_SOURCES	=	src/main.c		\
 					src/reader.c	\

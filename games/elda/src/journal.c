@@ -46,8 +46,8 @@ static bool reopen_journal_file() {
     fd = open(jpath, O_RDONLY|O_NONBLOCK);
     if (fd < 0)
         plog("failed to open journal '%s': %s\n", jpath, strerror(errno));
-    else
-        lseek(fd, 0, SEEK_END);
+    //else
+    //    lseek(fd, 0, SEEK_END);
 
     // close old fd
     if (jdata.journal_fd)
@@ -163,6 +163,14 @@ bool journal_event_get(char **bufp) {
 
     } //for(ievents...)
 
+    // shift the buf
+    // do this before any fd reading to fetch all the lines
+    // that are already accumulated in the buffer
+    if (jdata.buflen > 0) {
+        memmove(jdata.buf, jdata.buf + jdata.buflen, BUFSIZE - jdata.buflen);
+        jdata.buflen = strlen(jdata.buf);
+    }
+
 
     // poll for journal events
     pfds.fd = jdata.journal_fd;
@@ -182,14 +190,6 @@ bool journal_event_get(char **bufp) {
     }
 
     // it's ok if read() returned no data - we'll examine our buffer
-
-    // shift the buf
-    // do this before any fd reading to fetch all the lines
-    // that are already accumulated in the buffer
-    if (jdata.buflen > 0) {
-        memmove(jdata.buf, jdata.buf + jdata.buflen, BUFSIZE - jdata.buflen);
-        jdata.buflen = strlen(jdata.buf);
-    }
 
     // search for next '\n'
     nlp = strchr(jdata.buf, '\n');

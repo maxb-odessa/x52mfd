@@ -31,6 +31,14 @@ bool joyout_event_get(char **bufp) {
 
     // here we have either empty buffer or incomplete line in it (i.e. not ending with \n)
 
+    // shift the buf
+    // do this before any fd reading to fetch all the lines
+    // that are already accumulated in the buffer
+    if (buflen > 0) {
+        memmove(buf, buf + buflen + 1, BUFSIZE - buflen);
+        buflen = strlen(buf);
+    }
+
     // setup select() for stdin
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
@@ -55,14 +63,6 @@ bool joyout_event_get(char **bufp) {
     }
 
     // it's ok if read() returned no data - we'll examine our buffer
-
-    // shift the buf
-    // do this before any fd reading to fetch all the lines
-    // that are already accumulated in the buffer
-    if (buflen > 0) {
-        memmove(buf, buf + buflen, BUFSIZE - buflen);
-        buflen = strlen(buf);
-    }
 
     // search for next '\n'
     nlp = strchr(buf, '\n');

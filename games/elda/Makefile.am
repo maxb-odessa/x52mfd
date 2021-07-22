@@ -16,9 +16,7 @@ elda_SOURCES			=	src/elda.c		\
 							src/journal.c	\
 							src/actions.c	\
 							src/xdo.c		\
-							src/cJSON.c		\
-							include/elda.h	\
-							include/cJSON.h
+							include/elda.h
 
 elda_CFLAGS				=	-I$(top_srcdir)/include $(PCRE_CFLAGS) $(XDO_CFLAGS)
 elda_LDFLAGS			=
