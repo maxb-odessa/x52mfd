@@ -30,7 +30,7 @@ static char *replace_subs(char *patt, char **subs, int nsubs) {
     };
 
     // nothing to subst? return original
-    if (! subs || ! *subs)
+    if (! subs || ! *subs || nsubs < 1)
         return strdup(patt);
 
     // guess max result str len and alloc space for it

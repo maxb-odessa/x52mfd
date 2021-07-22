@@ -46,8 +46,8 @@ static bool reopen_journal_file() {
     fd = open(jpath, O_RDONLY|O_NONBLOCK);
     if (fd < 0)
         plog("failed to open journal '%s': %s\n", jpath, strerror(errno));
-    //else
-    //    lseek(fd, 0, SEEK_END);
+    else
+        lseek(fd, 0, SEEK_END);
 
     // close old fd
     if (jdata.journal_fd)

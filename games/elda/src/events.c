@@ -51,6 +51,10 @@ bool events_loop(void) {
     // poll for events
     while (true) {
 
+        // periodic events
+        if (! (ok = process_event(INTERVAL_EVENT, "")))
+            break;
+
         // get event string from stdin (joyout) and process it
         bufp = NULL;
         if (! (ok = joyout_event_get(&bufp)))
@@ -65,7 +69,7 @@ bool events_loop(void) {
         if (bufp && ! (ok = process_event(JOURNAL_EVENT, bufp)))
             break;
 
-        //    plog("bufp: <%s>\n", bufp);
+        //plog("bufp: <%s>\n", bufp);
     }
 
     // we're done

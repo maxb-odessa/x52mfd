@@ -6,6 +6,7 @@
 #include <pcre.h>
 #include <assert.h>
 #include <errno.h>
+#include <time.h>
 #include <ctype.h>
 
 // list of configured variables
@@ -33,30 +34,90 @@ char *conf_find_var(char *name) {
     return getenv(name);
 }
 
+
+// prepare pattern for regex based event patterns
+static void *prepare_regex_event(char *pattern) {
+    const char *errstr;
+    int errpos;
+    pcre *regex = malloc(sizeof(pcre *));
+    assert(regex);
+
+    regex = pcre_compile(pattern, PCRE_DOLLAR_ENDONLY|PCRE_BSR_ANYCRLF, &errstr, &errpos, NULL);
+    if (! regex) {
+        plog("broken regex '%s' near char %d: %s\n", pattern, errpos, errstr);
+        free(regex);
+        return NULL;
+    }
+
+    return (void *)regex;
+}
+
+
+typedef struct {
+    long    seconds;
+    time_t  deadline;
+} interval_t;
+
+// prepare interval type event pattern
+static void *prepare_interval_event(char *pattern) {
+    char *errstr = NULL;
+    interval_t *ival = malloc(sizeof(interval_t));
+    assert(ival);
+
+    ival->seconds = strtol(pattern, &errstr, 10);
+    if ((errstr && *errstr )|| ival->seconds <= 0) {
+        plog("invalid interval '%s': %s\n", pattern, errstr);
+        free(ival);
+        return NULL;
+    }
+
+    ival->deadline = time(NULL) + ival->seconds;
+    return (void *)ival;
+}
+
+
+// match pattern over regex based event line
+static bool match_regex_event(void *pattern, char *eventstr, char ***subs, int *subs_num) {
+    int ovector[30], rc;
+    pcre *regex = (pcre *)pattern;
+
+    rc = pcre_exec(regex, NULL, eventstr, strlen(eventstr), 0, 0, ovector, 30);
+    if (rc >= 0) {
+        *subs_num = rc;
+        if (rc > 0)
+            pcre_get_substring_list(eventstr, ovector, rc, (const char ***)subs);
+        return true;
+    }
+
+    return false;
+}
+
+
+// match pattern over interval based event line
+static bool match_interval_event(void *pattern, char *dummy1, char ***dummy2, int *dummy3) {
+    interval_t *ival = (interval_t *)pattern;
+    time_t now = time(NULL);
+
+    if (ival->deadline <= now) {
+        ival->deadline = now + ival->seconds;
+        return true;
+    }
+
+    return false;
+}
+
+
 // find matching event and return its struct (or NULL)
 // also will fill '**subs' array with matched subpatterns in case of regex
 // 'subs' must be freed by caller
-event_t *conf_match_event(EVENT_TYPE type, char *evstring, char ***subs, int *subs_num) {
+event_t *conf_match_event(EVENT_TYPE evtype, char *evstring, char ***subs, int *subs_num) {
     list_t *lp = events;
     event_t *evp;
 
-    // search the list
     while (lp) {
         evp = (event_t *)lp->data;
-
-        // match event type
-        if (evp->type == type) {
-            int ovector[30];
-            int rc = pcre_exec(evp->pattern, NULL, evstring, strlen(evstring), 0, 0, ovector, 30);
-            if (rc >= 0) {
-                *subs_num = rc;
-                if (rc > 0)
-                    pcre_get_substring_list(evstring, ovector, rc, (const char ***)subs);
-                return evp;
-            }
-        }
-
-        // pick next event pattern
+        if (evp->match_fn(evp->pattern, evstring, subs, subs_num))
+            return evp;
         lp = lp->next;
     }
 
@@ -91,16 +152,15 @@ static variable_t *add_variable(char *name, char *value) {
 }
 
 
+
 // compose and add new event to the list
-static event_t *add_event(EVENT_TYPE type, char *pattern) {
+static event_t *add_event(EVENT_TYPE evtype, char *evarg) {
     list_t *lp;
     event_t *evp;
-    const char *errstr;
-    int errpos;
 
-    // checks:
-    if (! pattern || ! *pattern) {
-        plog("event pattern missed\n");
+    // checks
+    if (! evarg || ! *evarg) {
+        plog("event pattern/argument missed\n");
         return NULL;
     }
 
@@ -109,10 +169,19 @@ static event_t *add_event(EVENT_TYPE type, char *pattern) {
     assert(evp);
 
     // init event entry
-    evp->type = type;
-    evp->pattern = pcre_compile(pattern, PCRE_DOLLAR_ENDONLY|PCRE_BSR_ANYCRLF, &errstr, &errpos, NULL);
+    evp->type = evtype;
+
+    if (evtype == JOURNAL_EVENT || evtype == JOYOUT_EVENT) {
+        evp->prepare_fn = prepare_regex_event;
+        evp->match_fn = match_regex_event;
+    } else if (evtype == INTERVAL_EVENT) {
+        evp->prepare_fn = prepare_interval_event;
+        evp->match_fn = match_interval_event;
+    }
+
+    // prep[are match pattern
+    evp->pattern = (void *)evp->prepare_fn(evarg);
     if (! evp->pattern) {
-        plog("broken regex '%s' near char %d: %s\n", pattern, errpos, errstr);
         free(evp);
         return NULL;
     }
@@ -272,6 +341,12 @@ static CONF_ENTRY_TYPE parse_line(char *buf, EVENT_TYPE *evtype, ACTION_TYPE *ac
 
         tokens[0] = pp;
         *evtype = JOYOUT_EVENT;
+        return CONF_ENTRY_TYPE_EVENT;
+
+    } else if (! strcmp("interval", bufp)) {
+
+        tokens[0] = pp;
+        *evtype = INTERVAL_EVENT;
         return CONF_ENTRY_TYPE_EVENT;
 
     } else if (! strcmp("x52", bufp)) {

@@ -46,13 +46,21 @@ typedef struct {
 typedef enum {
     JOURNAL_EVENT,
     JOYOUT_EVENT,
+    INTERVAL_EVENT,
 } EVENT_TYPE;
+
+
+typedef void *(*event_prepare)(char *pattern);
+typedef bool (*event_match)(void *pattern, char *eventstr, char ***subs, int *subs_num);
 
 // event
 typedef struct {
-    EVENT_TYPE  type;
-    pcre        *pattern;
-    list_t      *actions;
+    // event type
+    EVENT_TYPE      type;
+    event_prepare   prepare_fn;
+    event_match     match_fn;
+    void            *pattern;
+    list_t          *actions;
 } event_t;
 
 // events polling timeout
