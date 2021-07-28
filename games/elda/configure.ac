@@ -43,7 +43,9 @@ if test "x${enable_xdo}" == "xyes" ; then
     AC_DEFINE(WITH_XDO, 1, [build with XDO suport])
 fi
 
+AC_SUBST([HOME], [$HOME])
+AC_CONFIG_FILES([ed-odyssey.conf])
+AC_CONFIG_FILES([x52mfd.service])
 
 AC_OUTPUT
 
-#AC_CHECK_HEADERS([xdo.h], [], [AC_MSG_ERROR(['libxdo-devel' required, please install it])])

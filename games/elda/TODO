@@ -1,8 +1,8 @@
 
-
-- special event - internal tick?
-- clock not running. Update 1/s?
-- savable buffers in config
+- move to threaded model (or rewrite it in GO even)
+- make actions like events, i.e. use function ptrs to execute them
+- saveable buffers in config
+- cmd: action (exe: or run: or ext: ...). query edsm for star/system info
 - debug mode
 - docs
 - xdo

@@ -9,7 +9,6 @@ config.sub
 ltmain.sh
 config.status
 configure
-x52mfd_config.h
 config.h
 depcomp
 install-sh
@@ -28,3 +27,6 @@ x52mfd
 *.la
 *.lo
 *~
+
+!x52mfd.service.in
+!ed-odyssey.conf.in

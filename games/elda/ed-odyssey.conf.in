@@ -2,9 +2,9 @@
 #
 # config and other vars
 #
-var: xdo_display        192.168.100.115:0.0
+var: xdo_display        :0.0
 var: xdo_window         edpad-text       
-var: journal_dir        /home/vesemir/.ed/journal
+var: journal_dir        @HOME@/.ed/journal
 # shell pattern for journal files, they look like this: Journal.210613182542.01.log
 var: journal_pattern    Journal.[0-9]*.[0-9]*.log
 
