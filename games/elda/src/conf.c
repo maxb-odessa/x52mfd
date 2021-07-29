@@ -116,8 +116,14 @@ event_t *conf_match_event(EVENT_TYPE evtype, char *evstring, char ***subs, int *
 
     while (lp) {
         evp = (event_t *)lp->data;
-        if (evp->match_fn(evp->pattern, evstring, subs, subs_num))
+        if (evp->match_fn(evp->pattern, evstring, subs, subs_num)) {
+            if (debug && evtype != INTERVAL_EVENT) {
+                plog("EV MATCH[N=%d]: [%s]\n", *subs_num, evstring);
+                for (int i = 1; i < *subs_num; i ++)
+                    plog("EV SUB[%d]: [%s]\n", i, (*subs)[i]);
+            }
             return evp;
+        }
         lp = lp->next;
     }
 

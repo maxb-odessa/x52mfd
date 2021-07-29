@@ -99,6 +99,8 @@ bool exec_actions(list_t *aclist, char *buf, char **subs, int subs_num);
 bool call_xdo(char *str);
 #endif
 
+extern int debug;
+
 #endif //ELDA_H_INCLUDED
 
 

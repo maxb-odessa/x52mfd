@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 
 // just show help
 void show_help(char *me) {
@@ -11,28 +13,48 @@ void show_help(char *me) {
         me2 = me;
     else
         me2 ++;
-    printf("This is '" PACKAGE_STRING "', send bugs and other to <" PACKAGE_BUGREPORT ">\n"
+    printf( "This is '" PACKAGE_STRING "', Elite Dangerous support for x52mfd\n"
 #ifdef WITH_XDO
             "(built with XDO support)\n"
 #else
             "(built without XDO support)\n"
 #endif
-            "Usage:\n  %s [config_file]\n", me2);
+            "\nUsage:\n"
+            "   %s [-d|-h|-c conf]\n"
+            "Where:\n"
+            "   -d          debug mode: useful to test config on journal files\n"
+            "   -h          show this help\n"
+            "   -c conf     use 'conf' file instead of default one\n"
+            "\nSend bugs and other stuff to <" PACKAGE_BUGREPORT ">\n"
+            ,me2);
 }
 
-
+// debug mode
+int debug;
 
 // the main part
 int main(int argc, char *argv[]){
     char *config_file = DEFAULT_CONFIG_FILE;
+    int opt;
 
-    // get config file name from cmdline
-    if (argc >= 2) {
-        if (argc > 2 || argv[1][0] == '-') {
-            show_help(argv[0]);
-            return 1;
+    // parse cmdline args
+    while ((opt = getopt(argc, argv, "hdc:")) != -1) {
+        switch (opt) {
+            case 'd':
+                debug = 1;
+                break;
+            case 'c':
+                config_file = optarg;
+                break;
+            case'h':
+                show_help(argv[0]);
+                return 0;
+            default:
+                fprintf(stderr, "Unknown argument.\n");
+                show_help(argv[0]);
+                return 1;
         }
-        config_file = argv[1];
+
     }
 
     // read and parse config

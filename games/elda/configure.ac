@@ -8,6 +8,7 @@ AC_CONFIG_HEADERS([include/config.h])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_MACRO_DIRS([m4])
+AC_PREFIX_DEFAULT([$HOME/.local])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 CFLAGS="-std=gnu11 -g -ggdb -O0 -Wall -Werror"
