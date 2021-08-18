@@ -6,11 +6,8 @@ import (
 
 	"elda-go/config"
 	"elda-go/def"
-	_ "elda-go/event"
+	"elda-go/event"
 	"elda-go/log"
-
-	// load handlers
-	_ "elda-go/handlers"
 )
 
 // TODO show some help
@@ -39,16 +36,29 @@ func main() {
 	}
 
 	// read config
-	if cfg, err := config.New(confFile); err != nil {
+	cfg, err := config.New(confFile)
+	if err != nil {
 		log.Err("Config file '%s' error: %v\n", confFile, err)
 		os.Exit(2)
 	} else if err = cfg.Parse(); err != nil {
-		log.Err("Failed to read config file '%s': %v\n", confFile, err)
+		log.Err("Failed to parse config file '%s': %v\n", confFile, err)
 		os.Exit(3)
 	}
 
-	// run!
-	//events.Run()
+	// start sources
+	for name, src := range cfg.Sources() {
+		log.Info("starting source '%s'\n", name)
+		go src.Run()
+	}
+
+	// start actions
+	for name, act := range cfg.Actions() {
+		log.Info("starting action '%s'\n", name)
+		go act.Run()
+	}
+
+	// start events
+	event.Run(cfg.Events())
 
 	return
 }

@@ -1,38 +1,57 @@
 package handlers
 
 import (
-	_ "elda-go/handlers/filein"
-	_ "elda-go/handlers/interval"
-	_ "elda-go/handlers/pipein"
-	_ "elda-go/handlers/stdin"
+	"reflect"
 
-	_ "elda-go/handlers/fileout"
-	_ "elda-go/handlers/pipeout"
-	_ "elda-go/handlers/stdout"
-	_ "elda-go/handlers/xdo"
-)
+	"elda-go/handlers/filein"
+	"elda-go/handlers/pipein"
+	"elda-go/handlers/stdin"
+	"elda-go/handlers/ticker"
 
-const (
-	TYPE_SOURCE = iota
-	TYPE_ACTION
+	"elda-go/handlers/fileout"
+	"elda-go/handlers/pipeout"
+	"elda-go/handlers/stdout"
+	"elda-go/handlers/xdo"
 )
 
 type Handler interface {
+	Name() string
 	Init(map[string]string) error
 	Type() int
-	Name() string
-	Exec(string) error
+	Push(string) error
+	Pull() (string, error)
 }
 
-var LoadedHandlers []Handler
+var registeredHandlers []Handler
+
+func init() {
+	registeredHandlers = []Handler{
+		filein.Register(),
+		pipein.Register(),
+		stdin.Register(),
+		ticker.Register(),
+
+		fileout.Register(),
+		pipeout.Register(),
+		stdout.Register(),
+		xdo.Register(),
+	}
+}
 
 func Search(name string, htype int) Handler {
-
-	for _, h := range LoadedHandlers {
+	for _, h := range registeredHandlers {
 		if h.Name() == name && h.Type() == htype {
 			return h
 		}
 	}
-
 	return nil
+}
+
+// heavy magic here:
+// we want to make new handler variable but can not do this directly
+// because its package name is not known to a calling func
+// thus we use this dirty trick extracting its definition from an interface
+// and making a copy of it zeroing all its internals
+func New(i interface{}) Handler {
+	return reflect.New(reflect.ValueOf(i).Elem().Type()).Interface().(Handler)
 }

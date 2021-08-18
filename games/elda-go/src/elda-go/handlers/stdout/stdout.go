@@ -1,29 +1,50 @@
 package stdout
 
-/*
 import (
-	glob "elda-go/globals"
+	"bufio"
 	"fmt"
+	"os"
+
+	"elda-go/def"
 )
 
-type St struct {
+// any name
+type handler struct {
+	// mandatory fields
 	name string
+	typ  int
+
+	// optional
+	out *bufio.Writer
 }
 
-func init() {
-	var h glob.Handler = St{name: "stdout ac"}
-	glob.LoadedHandlers = append(glob.LoadedHandlers, h)
+// register us
+func Register() *handler {
+	return &handler{
+		name: "stdout",
+		typ:  def.HANDLER_TYPE_ACTION,
+	}
 }
 
-func (self St) Run() {
-	fmt.Println("stdout run")
+func (self *handler) Init(vars map[string]string) error {
+	self.out = bufio.NewWriter(os.Stdout)
+	return nil
 }
 
-func (self St) Init() {
-	fmt.Println("stdout init")
-}
-
-func (self St) Name() string {
+func (self *handler) Name() string {
 	return self.name
 }
-*/
+
+func (self *handler) Type() int {
+	return self.typ
+}
+
+func (self *handler) Push(s string) error {
+	self.out.WriteString(s)
+	self.out.Flush()
+	return nil
+}
+
+func (self *handler) Pull() (string, error) {
+	return "", fmt.Errorf("not implemented")
+}

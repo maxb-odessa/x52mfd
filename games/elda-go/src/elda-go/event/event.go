@@ -23,6 +23,18 @@ func New() *Event {
 	return e
 }
 
+func Run(events []*Event) {
+
+	// get src chan
+
+	// listen src chan
+
+	// process event lines
+
+	// dispatch event to action
+
+}
+
 func (self *Event) SetSource(src *source.Source, pattern string) (err error) {
 
 	self.pattern, err = regexp.Compile(pattern)

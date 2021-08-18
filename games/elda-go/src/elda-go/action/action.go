@@ -11,14 +11,14 @@ type Action struct {
 	name    string
 	vars    map[string]string
 	handler handlers.Handler
-	ch      chan string
+	inChan  chan string
 }
 
 func New() *Action {
-	a := new(Action)
-	a.vars = make(map[string]string)
-	a.ch = make(chan string, def.SRC_CHAN_LEN)
-	return a
+	act := new(Action)
+	act.vars = make(map[string]string)
+	act.inChan = make(chan string, def.ACT_CHAN_LEN)
+	return act
 }
 
 func (self *Action) Name() string {
@@ -26,22 +26,29 @@ func (self *Action) Name() string {
 }
 
 func (self *Action) SetName(name string) error {
+	if self.name != "" {
+		return fmt.Errorf("can not set action name to '%s': already set to '%s'", name, self.name)
+	}
 	self.name = name
 	return nil
 }
 
-func (self *Action) SetVar(key, val string) (err error) {
-	if _, ok := self.vars[key]; !ok {
-		self.vars[key] = val
-	} else {
-		err = fmt.Errorf("variable '%s' already set to '%s'", key, val)
+func (self *Action) SetVar(key, val string) error {
+	if v, ok := self.vars[key]; ok {
+		return fmt.Errorf("variable '%s' already set to '%s'", key, v)
 	}
-	return
+	self.vars[key] = val
+	return nil
 }
 
 func (self *Action) SetHandler(name string) error {
-
-	self.handler = handlers.Search(name, handlers.TYPE_ACTION)
-
+	if self.handler != nil {
+		return fmt.Errorf("handler already defined")
+	}
+	self.handler = handlers.Search(name, def.HANDLER_TYPE_ACTION)
 	return nil
+}
+
+func (self *Action) Run() {
+	// go(): wait for data from self.inChan and call a handler
 }

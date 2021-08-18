@@ -7,12 +7,12 @@ const (
 	ACT_CHAN_LEN = 64
 )
 
-var ConfFile string
+const (
+	HANDLER_TYPE_SOURCE = 1
+	HANDLER_TYPE_ACTION = 2
+)
 
-type ChanMsg struct {
-	name string
-	data string
-}
+var ConfFile string
 
 func init() {
 	ConfFile = os.Getenv("HOME") + "/" + ".local/etc/elda-go.conf"

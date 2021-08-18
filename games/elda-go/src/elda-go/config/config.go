@@ -46,6 +46,18 @@ func New(confFile string) (*Cfg, error) {
 	return &cfg, nil
 }
 
+func (self *Cfg) Sources() map[string]*source.Source {
+	return self.sources
+}
+
+func (self *Cfg) Actions() map[string]*action.Action {
+	return self.actions
+}
+
+func (self *Cfg) Events() []*event.Event {
+	return self.events
+}
+
 func (self *Cfg) Parse() (err error) {
 
 	for self.lineNo = 0; self.lineNo < self.confLen; self.lineNo++ {
