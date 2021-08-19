@@ -5,19 +5,20 @@ import (
 
 	"elda-go/def"
 	"elda-go/handlers"
+	"elda-go/log"
 )
 
 type Action struct {
 	name    string
 	vars    map[string]string
 	handler handlers.Handler
-	inChan  chan string
+	inChan  chan *def.ChanMsg
 }
 
 func New() *Action {
 	act := new(Action)
 	act.vars = make(map[string]string)
-	act.inChan = make(chan string, def.ACT_CHAN_LEN)
+	act.inChan = make(chan *def.ChanMsg, def.ACT_CHAN_LEN)
 	return act
 }
 
@@ -42,13 +43,55 @@ func (self *Action) SetVar(key, val string) error {
 }
 
 func (self *Action) SetHandler(name string) error {
+
 	if self.handler != nil {
 		return fmt.Errorf("handler already defined")
 	}
-	self.handler = handlers.Search(name, def.HANDLER_TYPE_ACTION)
+
+	handler := handlers.Search(name, def.HANDLER_TYPE_ACTION)
+	if handler == nil {
+		return fmt.Errorf("handler '%s' does not exist", name)
+	}
+
+	self.handler = handlers.DupAndZero(handler)
+
+	return nil
+}
+
+func (self *Action) GetMsg() (string, string, error) {
+	select {
+	case msg := <-self.inChan:
+		return msg.Name, msg.Data, nil
+	}
+	return "", "", fmt.Errorf("erhm... what?!")
+}
+
+func (self *Action) Init() error {
+	if err := self.handler.Init(self.vars); err != nil {
+		return fmt.Errorf("failed to init handler '%s': %v", self.name, err)
+	}
 	return nil
 }
 
 func (self *Action) Run() {
-	// go(): wait for data from self.inChan and call a handler
+	for {
+
+		src, str, err := self.GetMsg()
+		if str == "" {
+			continue
+		}
+
+		if err != nil {
+			log.Warn("action '%s' failed: %v\n", self.name, err)
+			continue
+		}
+
+		log.Info("action '%s' got msg from '%s': [%s]\n", src, str)
+
+		if err = self.handler.Push(str); err != nil {
+			log.Warn("action '%s' error in handler '%s' failed: %v\n", self.name, self.handler.Name(), err)
+		}
+	}
+
+	return
 }

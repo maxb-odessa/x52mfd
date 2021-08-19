@@ -14,18 +14,13 @@ type Source struct {
 	handler handlers.Handler
 }
 
-type ChanMsg struct {
-	name string
-	data string
-}
-
-var outChan chan *ChanMsg
+var outChan chan *def.ChanMsg
 
 func init() {
-	outChan = make(chan *ChanMsg, def.SRC_CHAN_LEN)
+	outChan = make(chan *def.ChanMsg, def.SRC_CHAN_LEN)
 }
 
-func GetChan() chan *ChanMsg {
+func GetChan() chan *def.ChanMsg {
 	return outChan
 }
 
@@ -66,27 +61,33 @@ func (self *Source) SetHandler(name string) error {
 		return fmt.Errorf("handler '%s' does not exist", name)
 	}
 
-	self.handler = handlers.New(handler)
+	self.handler = handlers.DupAndZero(handler)
 
-	if err := handler.Init(self.vars); err != nil {
-		return fmt.Errorf("failed to init handler '%s': %v", name, err)
-	}
-
-	// init handler
 	return nil
 }
 
 func (self *Source) SendMsg(data string) error {
-	outChan <- &ChanMsg{name: self.name, data: data}
+	outChan <- &def.ChanMsg{Name: self.name, Data: data}
+	return nil
+}
+
+func (self *Source) Init() error {
+	if err := self.handler.Init(self.vars); err != nil {
+		return fmt.Errorf("failed to init handler '%s': %v", self.name, err)
+	}
 	return nil
 }
 
 func (self *Source) Run() {
+
 	for {
-		if data, err := self.handler.Pull(); err != nil {
-			log.Err("source '%s' error in handler '%s': %v\n", self.Name(), self.handler.Name(), err)
-		} else {
-			self.SendMsg(data)
+		if str, err := self.handler.Pull(); err != nil {
+			log.Warn("source '%s' error in handler '%s': %v\n", self.name, self.handler.Name(), err)
+		} else if str != "" {
+			log.Info("source '%s' sending msg: [%s]\n", self.name, str)
+			self.SendMsg(str)
 		}
 	}
+
+	return
 }

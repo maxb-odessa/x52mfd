@@ -52,6 +52,6 @@ func Search(name string, htype int) Handler {
 // because its package name is not known to a calling func
 // thus we use this dirty trick extracting its definition from an interface
 // and making a copy of it zeroing all its internals
-func New(i interface{}) Handler {
+func DupAndZero(i interface{}) Handler {
 	return reflect.New(reflect.ValueOf(i).Elem().Type()).Interface().(Handler)
 }

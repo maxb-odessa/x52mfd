@@ -1,10 +1,8 @@
 package ticker
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
+	"time"
 
 	"elda-go/def"
 )
@@ -16,7 +14,8 @@ type handler struct {
 	typ  int
 
 	// optional
-	in *bufio.Scanner
+	message string
+	ticker  *time.Ticker
 }
 
 // register us
@@ -28,7 +27,21 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
-	self.in = bufio.NewScanner(os.Stdin)
+
+	if i, err := def.GetIntVar(vars, "interval"); err != nil {
+		return err
+	} else if i <= 0 {
+		return fmt.Errorf("variable 'interval' value must be positive")
+	} else {
+		self.ticker = time.NewTicker(time.Duration(i) * time.Second)
+	}
+
+	if m, err := def.GetStrVar(vars, "message"); err != nil {
+		return err
+	} else {
+		self.message = m
+	}
+
 	return nil
 }
 
@@ -41,12 +54,11 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
-	self.in.Scan()
-	s := strings.TrimSpace(self.in.Text())
-	if err := self.in.Err(); err != nil {
-		return "", err
+	select {
+	case <-self.ticker.C:
+		return self.message, nil
 	}
-	return s, nil
+	return "", nil
 }
 
 func (self *handler) Push(s string) error {

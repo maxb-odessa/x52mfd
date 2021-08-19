@@ -1,9 +1,7 @@
 package stdin
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strings"
 
 	"elda-go/def"
@@ -16,7 +14,6 @@ type handler struct {
 	typ  int
 
 	// optional
-	in *bufio.Scanner
 }
 
 // register us
@@ -28,7 +25,6 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
-	self.in = bufio.NewScanner(os.Stdin)
 	return nil
 }
 
@@ -41,12 +37,11 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
-	self.in.Scan()
-	s := strings.TrimSpace(self.in.Text())
-	if err := self.in.Err(); err != nil {
-		return "", err
-	}
-	return s, nil
+	var str string
+
+	fmt.Scanln(&str)
+
+	return strings.TrimSpace(str), nil
 }
 
 func (self *handler) Push(s string) error {

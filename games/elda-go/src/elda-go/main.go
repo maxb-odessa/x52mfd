@@ -47,14 +47,22 @@ func main() {
 
 	// start sources
 	for name, src := range cfg.Sources() {
-		log.Info("starting source '%s'\n", name)
-		go src.Run()
+		if err := src.Init(); err != nil {
+			log.Err("failed to init source '%s': %v\n", name, err)
+		} else {
+			log.Info("starting source '%s'\n", name)
+			go src.Run()
+		}
 	}
 
 	// start actions
 	for name, act := range cfg.Actions() {
-		log.Info("starting action '%s'\n", name)
-		go act.Run()
+		if err := act.Init(); err != nil {
+			log.Err("failed to init action '%s': %v\n", name, err)
+		} else {
+			log.Info("starting action '%s'\n", name)
+			go act.Run()
+		}
 	}
 
 	// start events

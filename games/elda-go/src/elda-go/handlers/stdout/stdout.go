@@ -1,9 +1,7 @@
 package stdout
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 
 	"elda-go/def"
 )
@@ -15,7 +13,6 @@ type handler struct {
 	typ  int
 
 	// optional
-	out *bufio.Writer
 }
 
 // register us
@@ -27,7 +24,6 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
-	self.out = bufio.NewWriter(os.Stdout)
 	return nil
 }
 
@@ -40,8 +36,7 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Push(s string) error {
-	self.out.WriteString(s)
-	self.out.Flush()
+	fmt.Println(s)
 	return nil
 }
 

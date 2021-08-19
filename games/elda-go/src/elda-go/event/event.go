@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"elda-go/action"
+	"elda-go/log"
 	"elda-go/source"
 )
 
@@ -25,13 +26,16 @@ func New() *Event {
 
 func Run(events []*Event) {
 
-	// get src chan
+	ch := source.GetChan()
 
-	// listen src chan
-
-	// process event lines
-
-	// dispatch event to action
+	for {
+		select {
+		case msg := <-ch:
+			log.Info("MSG: %+v\n", msg)
+			// match msg.data over source.pattern and source.name
+			// if match - pass PROCESSED msg to related actions chans
+		}
+	}
 
 }
 
