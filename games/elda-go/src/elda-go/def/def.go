@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -43,4 +44,12 @@ func GetIntVar(vars map[string]string, varname string) (int, error) {
 	} else {
 		return int(i), nil
 	}
+}
+
+func IsYes(s string) bool {
+	switch strings.ToLower(s) {
+	case "off", "no", "false", "0":
+		return false
+	}
+	return true
 }

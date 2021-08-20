@@ -297,7 +297,7 @@ func fieldsN(str string, n int) []string {
 	prevSep := false
 
 	return strings.FieldsFunc(str, func(r rune) bool {
-		if count >= n {
+		if count >= n-1 {
 			return false
 		}
 		if unicode.IsSpace(r) {

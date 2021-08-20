@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"elda-go/action"
+	"elda-go/def"
 	"elda-go/log"
 	"elda-go/source"
 )
@@ -19,11 +20,6 @@ type Event struct {
 	actions []*evAction
 }
 
-func New() *Event {
-	e := new(Event)
-	return e
-}
-
 func Run(events []*Event) {
 
 	ch := source.GetChan()
@@ -31,12 +27,51 @@ func Run(events []*Event) {
 	for {
 		select {
 		case msg := <-ch:
-			log.Info("MSG: %+v\n", msg)
-			// match msg.data over source.pattern and source.name
-			// if match - pass PROCESSED msg to related actions chans
+			process(msg, events)
 		}
 	}
 
+	return
+}
+
+func process(srcMsg *def.ChanMsg, events []*Event) {
+
+	// examine all configured events
+	for _, ev := range events {
+
+		// chose event from this source only
+		if ev.source.Name() != srcMsg.Name {
+			continue
+		}
+
+		// match event by pattern
+		log.Debug("matching %q %+v\n", srcMsg.Data, ev.pattern)
+		if ok := ev.pattern.MatchString(srcMsg.Data); !ok {
+			log.Debug("not matched %q\n", srcMsg.Data)
+			continue
+		}
+
+		// send message to all actions
+		for _, ea := range ev.actions {
+
+			data := ev.pattern.ReplaceAllString(srcMsg.Data, ea.data)
+
+			actMsg := &def.ChanMsg{Name: srcMsg.Name, Data: data}
+
+			select {
+			case ea.action.GetChan() <- actMsg:
+				log.Debug("sending '%+v' to action '%s'\n", actMsg, ea.action.Name())
+			default:
+				log.Warn("action '%s' channel is full\n", ea.action.Name())
+			}
+		}
+
+	}
+}
+
+func New() *Event {
+	e := new(Event)
+	return e
 }
 
 func (self *Event) SetSource(src *source.Source, pattern string) (err error) {

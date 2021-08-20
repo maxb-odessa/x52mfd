@@ -58,12 +58,8 @@ func (self *Action) SetHandler(name string) error {
 	return nil
 }
 
-func (self *Action) GetMsg() (string, string, error) {
-	select {
-	case msg := <-self.inChan:
-		return msg.Name, msg.Data, nil
-	}
-	return "", "", fmt.Errorf("erhm... what?!")
+func (self *Action) GetChan() chan *def.ChanMsg {
+	return self.inChan
 }
 
 func (self *Action) Init() error {
@@ -71,6 +67,14 @@ func (self *Action) Init() error {
 		return fmt.Errorf("failed to init handler '%s': %v", self.name, err)
 	}
 	return nil
+}
+
+func (self *Action) GetMsg() (string, string, error) {
+	select {
+	case msg := <-self.inChan:
+		return msg.Name, msg.Data, nil
+	}
+	return "", "", fmt.Errorf("erhm... what?!")
 }
 
 func (self *Action) Run() {
@@ -86,7 +90,7 @@ func (self *Action) Run() {
 			continue
 		}
 
-		log.Info("action '%s' got msg from '%s': [%s]\n", src, str)
+		log.Debug("action '%s' got msg from '%s': [%s]\n", self.name, src, str)
 
 		if err = self.handler.Push(str); err != nil {
 			log.Warn("action '%s' error in handler '%s' failed: %v\n", self.name, self.handler.Name(), err)

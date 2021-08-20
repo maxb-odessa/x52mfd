@@ -66,15 +66,15 @@ func (self *Source) SetHandler(name string) error {
 	return nil
 }
 
-func (self *Source) SendMsg(data string) error {
-	outChan <- &def.ChanMsg{Name: self.name, Data: data}
-	return nil
-}
-
 func (self *Source) Init() error {
 	if err := self.handler.Init(self.vars); err != nil {
 		return fmt.Errorf("failed to init handler '%s': %v", self.name, err)
 	}
+	return nil
+}
+
+func (self *Source) SendMsg(data string) error {
+	outChan <- &def.ChanMsg{Name: self.name, Data: data}
 	return nil
 }
 
@@ -84,7 +84,7 @@ func (self *Source) Run() {
 		if str, err := self.handler.Pull(); err != nil {
 			log.Warn("source '%s' error in handler '%s': %v\n", self.name, self.handler.Name(), err)
 		} else if str != "" {
-			log.Info("source '%s' sending msg: [%s]\n", self.name, str)
+			log.Debug("source '%s' sending msg: [%s]\n", self.name, str)
 			self.SendMsg(str)
 		}
 	}
