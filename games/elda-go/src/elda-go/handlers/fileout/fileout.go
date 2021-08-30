@@ -1,7 +1,6 @@
 package fileout
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 
@@ -15,7 +14,7 @@ type handler struct {
 	typ  int
 
 	// optional
-	out *bufio.Writer
+	fp *os.File
 }
 
 // register us
@@ -27,7 +26,30 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
-	self.out = bufio.NewWriter(os.Stdout)
+
+	var path string
+	var err error
+
+	if path, err = def.GetStrVar(vars, "path"); err != nil || len(path) == 0 {
+		return err
+	}
+
+	flags := os.O_WRONLY
+
+	if def.IsVarSetAndYes(vars, "truncate") {
+		flags |= os.O_TRUNC
+	}
+
+	if def.IsVarSetAndYes(vars, "create") {
+		flags |= os.O_CREATE
+	}
+
+	if self.fp, err = os.OpenFile(path, flags, 0666); err != nil {
+		return err
+	}
+
+	self.fp.Seek(0, os.SEEK_END)
+
 	return nil
 }
 
@@ -40,9 +62,8 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Push(s string) error {
-	self.out.WriteString(s)
-	self.out.Flush()
-	return nil
+	_, err := self.fp.WriteString(s)
+	return err
 }
 
 func (self *handler) Pull() (string, error) {
@@ -50,4 +71,8 @@ func (self *handler) Pull() (string, error) {
 }
 
 func (self *handler) Done() {
+	if self.fp != nil {
+		self.fp.Close()
+		self.fp = nil
+	}
 }

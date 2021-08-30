@@ -27,15 +27,6 @@ func Register() *handler {
 
 func (self *handler) Init(vars map[string]string) error {
 
-	path, err := def.GetStrEnv(vars, "path")
-	if err != nil {
-		return err
-	}
-	if path == "" {
-		return fmt.Errorf("variable 'path' must not be empty")
-	}
-
-	self.scanner
 	return nil
 }
 

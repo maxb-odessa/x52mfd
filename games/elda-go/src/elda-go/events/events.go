@@ -51,7 +51,7 @@ func Run(sources map[string]*source.Source, actions map[string]*action.Action, e
 			for _, sc := range sources {
 				sc.Done()
 			}
-			close(srcChan)
+			// close(srcChan)
 			return
 		}
 

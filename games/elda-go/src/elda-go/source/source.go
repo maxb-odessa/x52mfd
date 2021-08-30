@@ -88,6 +88,7 @@ func writeChan(ch chan *def.ChanMsg, msg *def.ChanMsg) (ok bool) {
 }
 
 func (self *Source) Run() {
+	defer log.Debug("source %s exited\n", self.name)
 
 	go func() {
 		for {
@@ -115,7 +116,6 @@ func (self *Source) Run() {
 
 	<-self.doneCh
 
-	log.Debug("source %s exited\n", self.name)
 	return
 }
 

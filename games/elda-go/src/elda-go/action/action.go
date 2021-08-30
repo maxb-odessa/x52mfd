@@ -70,6 +70,8 @@ func (self *Action) Init() error {
 }
 
 func (self *Action) Run() {
+	defer log.Debug("action '%s' exited\n", self.name)
+
 	for {
 
 		var msg *def.ChanMsg

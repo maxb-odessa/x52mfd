@@ -9,7 +9,7 @@ import (
 
 const (
 	SRC_CHAN_LEN = 32
-	ACT_CHAN_LEN = 128
+	ACT_CHAN_LEN = 64
 )
 
 const (
@@ -51,5 +51,25 @@ func IsYes(s string) bool {
 	case "off", "no", "false", "0":
 		return false
 	}
+	return true
+}
+
+func IsVarSetAndYes(vars map[string]string, varname string) bool {
+	if val, err := GetStrVar(vars, varname); err != nil {
+		return false
+	} else {
+		return IsYes(val)
+	}
+}
+
+func SendMsg(ch chan *ChanMsg, msg *ChanMsg) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+
+	ch <- msg
+
 	return true
 }
