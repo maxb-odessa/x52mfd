@@ -6,7 +6,7 @@ import (
 
 	"elda-go/config"
 	"elda-go/def"
-	"elda-go/event"
+	"elda-go/events"
 	"elda-go/log"
 )
 
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// start events
-	event.Run(cfg.Events())
+	events.Run(cfg.Events())
 
 	return
 }

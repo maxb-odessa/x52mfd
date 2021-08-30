@@ -8,7 +8,7 @@ import (
 	"unicode"
 
 	"elda-go/action"
-	"elda-go/event"
+	"elda-go/events"
 	"elda-go/source"
 )
 
@@ -18,7 +18,7 @@ type Cfg struct {
 	lineNo    int
 	sources   map[string]*source.Source
 	actions   map[string]*action.Action
-	events    []*event.Event
+	events    []*events.Event
 }
 
 func New(confFile string) (*Cfg, error) {
@@ -54,7 +54,7 @@ func (self *Cfg) Actions() map[string]*action.Action {
 	return self.actions
 }
 
-func (self *Cfg) Events() []*event.Event {
+func (self *Cfg) Events() []*events.Event {
 	return self.events
 }
 
@@ -228,7 +228,7 @@ func (self *Cfg) parseAction() (err error) {
 
 func (self *Cfg) parseEvent() (err error) {
 
-	ev := event.New()
+	ev := events.New()
 
 	defer func() {
 		if err == nil {
