@@ -9,7 +9,7 @@ import (
 
 const (
 	SRC_CHAN_LEN = 32
-	ACT_CHAN_LEN = 64
+	ACT_CHAN_LEN = 128
 )
 
 const (

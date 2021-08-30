@@ -42,3 +42,6 @@ func (self *handler) Pull() (string, error) {
 func (self *handler) Push(s string) error {
 	return fmt.Errorf("not implemented")
 }
+
+func (self *handler) Done() {
+}

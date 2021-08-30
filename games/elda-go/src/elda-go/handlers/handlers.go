@@ -20,6 +20,7 @@ type Handler interface {
 	Type() int
 	Push(string) error
 	Pull() (string, error)
+	Done()
 }
 
 var registeredHandlers []Handler

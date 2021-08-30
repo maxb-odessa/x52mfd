@@ -16,6 +16,7 @@ type handler struct {
 	// optional
 	message string
 	ticker  *time.Ticker
+	done    chan bool
 }
 
 // register us
@@ -42,6 +43,8 @@ func (self *handler) Init(vars map[string]string) error {
 		self.message = m
 	}
 
+	self.done = make(chan bool)
+
 	return nil
 }
 
@@ -53,14 +56,23 @@ func (self *handler) Type() int {
 	return self.typ
 }
 
-func (self *handler) Pull() (string, error) {
+func (self *handler) Pull() (s string, e error) {
+
 	select {
 	case <-self.ticker.C:
-		return self.message, nil
+		s = self.message
+	case <-self.done:
+		return
 	}
-	return "", nil
+
+	return
 }
 
 func (self *handler) Push(s string) error {
 	return fmt.Errorf("not implemented")
+}
+
+func (self *handler) Done() {
+	self.done <- true
+	self.ticker.Stop()
 }

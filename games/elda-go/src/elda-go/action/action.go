@@ -69,33 +69,30 @@ func (self *Action) Init() error {
 	return nil
 }
 
-func (self *Action) GetMsg() (string, string, error) {
-	select {
-	case msg := <-self.inChan:
-		return msg.Name, msg.Data, nil
-	}
-	return "", "", fmt.Errorf("erhm... what?!")
-}
-
 func (self *Action) Run() {
 	for {
 
-		src, str, err := self.GetMsg()
-		if str == "" {
-			continue
+		var msg *def.ChanMsg
+		var ok bool
+
+		select {
+		case msg, ok = <-self.inChan:
+			if !ok {
+				self.handler.Done()
+				return
+			}
 		}
 
-		if err != nil {
-			log.Warn("action '%s' failed: %v\n", self.name, err)
-			continue
-		}
-
-		log.Debug("action '%s' got msg from '%s': [%s]\n", self.name, src, str)
-
-		if err = self.handler.Push(str); err != nil {
+		log.Debug("action '%s' got msg '%v'\n", self.name, msg)
+		if err := self.handler.Push(msg.Data); err != nil {
 			log.Warn("action '%s' error in handler '%s' failed: %v\n", self.name, self.handler.Name(), err)
 		}
 	}
 
 	return
+}
+
+func (self *Action) Done() {
+	log.Info("stopping action '%s'\n", self.name)
+	close(self.inChan)
 }

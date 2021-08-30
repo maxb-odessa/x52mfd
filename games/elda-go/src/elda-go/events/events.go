@@ -1,7 +1,10 @@
 package events
 
 import (
+	"os"
+	"os/signal"
 	"regexp"
+	"syscall"
 
 	"elda-go/action"
 	"elda-go/def"
@@ -20,15 +23,38 @@ type Event struct {
 	actions []*evAction
 }
 
-func Run(events []*Event) {
+func Run(sources map[string]*source.Source, actions map[string]*action.Action, events []*Event) {
 
-	ch := source.GetChan()
+	doneChan := make(chan bool, 1)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for sig := range sigChan {
+			log.Info("got signal %d\n", sig)
+			doneChan <- true
+		}
+	}()
+
+	srcChan := source.GetChan()
 
 	for {
+
 		select {
-		case msg := <-ch:
-			process(msg, events)
+		case msg, ok := <-srcChan:
+			if ok {
+				process(msg, events)
+			}
+		case <-doneChan:
+			for _, ac := range actions {
+				ac.Done()
+			}
+			for _, sc := range sources {
+				sc.Done()
+			}
+			close(srcChan)
+			return
 		}
+
 	}
 
 	return
@@ -45,9 +71,9 @@ func process(srcMsg *def.ChanMsg, events []*Event) {
 		}
 
 		// match event by pattern
-		log.Debug("matching %q %+v\n", srcMsg.Data, ev.pattern)
+		log.Debug("event matching '%s' to '%v'\n", srcMsg.Data, ev.pattern)
 		if ok := ev.pattern.MatchString(srcMsg.Data); !ok {
-			log.Debug("not matched %q\n", srcMsg.Data)
+			log.Debug("event not matched '%s'\n", srcMsg.Data)
 			continue
 		}
 
@@ -60,7 +86,7 @@ func process(srcMsg *def.ChanMsg, events []*Event) {
 
 			select {
 			case ea.action.GetChan() <- actMsg:
-				log.Debug("sending '%+v' to action '%s'\n", actMsg, ea.action.Name())
+				log.Debug("event sending '%+v' to action '%s'\n", actMsg, ea.action.Name())
 			default:
 				log.Warn("action '%s' channel is full\n", ea.action.Name())
 			}

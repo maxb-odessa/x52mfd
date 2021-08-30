@@ -12,6 +12,7 @@ type Source struct {
 	name    string
 	vars    map[string]string
 	handler handlers.Handler
+	doneCh  chan bool
 }
 
 var outChan chan *def.ChanMsg
@@ -27,6 +28,7 @@ func GetChan() chan *def.ChanMsg {
 func New() *Source {
 	src := new(Source)
 	src.vars = make(map[string]string)
+	src.doneCh = make(chan bool)
 	return src
 }
 
@@ -73,21 +75,52 @@ func (self *Source) Init() error {
 	return nil
 }
 
-func (self *Source) SendMsg(data string) error {
-	outChan <- &def.ChanMsg{Name: self.name, Data: data}
-	return nil
+func writeChan(ch chan *def.ChanMsg, msg *def.ChanMsg) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+
+	ch <- msg
+
+	return true
 }
 
 func (self *Source) Run() {
 
-	for {
-		if str, err := self.handler.Pull(); err != nil {
-			log.Warn("source '%s' error in handler '%s': %v\n", self.name, self.handler.Name(), err)
-		} else if str != "" {
-			log.Debug("source '%s' sending msg: [%s]\n", self.name, str)
-			self.SendMsg(str)
-		}
-	}
+	go func() {
+		for {
+			data, err := self.handler.Pull() // must block here
 
+			if err != nil {
+				log.Err("source '%s' failed on handler '%s': %v\n", self.name, self.handler.Name(), err)
+				return
+			}
+
+			if data == "" {
+				continue
+			}
+
+			msg := &def.ChanMsg{Name: self.name, Data: data}
+
+			log.Debug("source '%s' sending msg '%v'\n", self.name, msg)
+
+			if writeChan(outChan, msg) == false {
+				log.Err("source '%s' failed to send data: %v\n", self.name, err)
+				return
+			}
+		}
+	}()
+
+	<-self.doneCh
+
+	log.Debug("source %s exited\n", self.name)
 	return
+}
+
+func (self *Source) Done() {
+	log.Info("stopping source '%s'\n", self.name)
+	self.handler.Done()
+	self.doneCh <- true
 }

@@ -1,6 +1,7 @@
 package filein
 
 import (
+	"bufio"
 	"fmt"
 
 	"elda-go/def"
@@ -13,6 +14,7 @@ type handler struct {
 	typ  int
 
 	// optional
+	scanner *bufio.Scanner
 }
 
 // register us
@@ -24,6 +26,16 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
+
+	path, err := def.GetStrEnv(vars, "path")
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return fmt.Errorf("variable 'path' must not be empty")
+	}
+
+	self.scanner
 	return nil
 }
 
@@ -41,4 +53,7 @@ func (self *handler) Pull() (string, error) {
 
 func (self *handler) Push(s string) error {
 	return fmt.Errorf("not implemented")
+}
+
+func (self *handler) Done() {
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"elda-go/config"
 	"elda-go/def"
@@ -45,15 +46,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	// start sources
-	for name, src := range cfg.Sources() {
-		if err := src.Init(); err != nil {
-			log.Err("failed to init source '%s': %v\n", name, err)
-		} else {
-			log.Info("starting source '%s'\n", name)
-			go src.Run()
-		}
-	}
+	var wg sync.WaitGroup
 
 	// start actions
 	for name, act := range cfg.Actions() {
@@ -61,12 +54,29 @@ func main() {
 			log.Err("failed to init action '%s': %v\n", name, err)
 		} else {
 			log.Info("starting action '%s'\n", name)
-			go act.Run()
+			wg.Add(1)
+			a := act
+			go func() { defer wg.Done(); a.Run() }()
+		}
+	}
+
+	// start sources
+	for name, src := range cfg.Sources() {
+		if err := src.Init(); err != nil {
+			log.Err("failed to init source '%s': %v\n", name, err)
+		} else {
+			log.Info("starting source '%s'\n", name)
+			wg.Add(1)
+			s := src
+			go func() { defer wg.Done(); s.Run() }()
 		}
 	}
 
 	// start events
-	events.Run(cfg.Events())
+	events.Run(cfg.Sources(), cfg.Actions(), cfg.Events())
 
+	wg.Wait()
+
+	log.Info("exiting\n")
 	return
 }
