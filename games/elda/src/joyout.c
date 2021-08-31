@@ -17,7 +17,7 @@ bool joyout_events_init(void) {
 }
 
 
-#define BUFSIZE    1024
+#define BUFSIZE    256
 static char buf[BUFSIZE + 1];
 static size_t buflen;
 
@@ -72,7 +72,7 @@ bool joyout_event_get(char **bufp) {
         *bufp = NULL;
     // got newline - cut the buf on it
     else {
-        *nlp ++ = '\0';
+        *nlp = '\0';
         buflen = nlp - buf;
         *bufp = buf;
     }

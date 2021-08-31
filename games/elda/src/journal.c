@@ -12,7 +12,7 @@
 #include <fnmatch.h>
 #include <assert.h>
 
-#define BUFSIZE  65535
+#define BUFSIZE  8192
 
 struct journal_data {
     char    buf[BUFSIZE + 1];
@@ -48,8 +48,8 @@ static bool reopen_journal_file() {
         plog("failed to open journal '%s': %s\n", jpath, strerror(errno));
     else {
         // in debug mode we'll read whole journal file emulating normal ED run
-        if (! debug)
-            lseek(fd, 0, SEEK_END);
+        //if (! debug)
+        lseek(fd, 0, SEEK_END);
     }
 
     // close old fd
@@ -202,7 +202,7 @@ bool journal_event_get(char **bufp) {
         *bufp = NULL;
     else {
         // got newline - cut the buf on it
-        *nlp ++ = '\0';
+        *nlp = '\0';
         jdata.buflen = nlp - jdata.buf;
         *bufp = jdata.buf;
     }

@@ -30,15 +30,17 @@ func init() {
 
 func GetStrVar(vars map[string]string, varname string) (string, error) {
 	if val, ok := vars[varname]; !ok {
-		return "", fmt.Errorf("variable '%s' not set")
+		return "", fmt.Errorf("variable '%s' not set", varname)
+	} else if len(val) == 0 {
+		return "", fmt.Errorf("varible '%s' is zero", varname)
 	} else {
 		return val, nil
 	}
 }
 
 func GetIntVar(vars map[string]string, varname string) (int, error) {
-	if val, ok := vars[varname]; !ok {
-		return 0, fmt.Errorf("variable '%s' not set", varname)
+	if val, err := GetStrVar(vars, varname); err != nil {
+		return 0, err
 	} else if i, err := strconv.ParseInt(val, 10, 0); err != nil {
 		return 0, err
 	} else {

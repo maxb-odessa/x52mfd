@@ -30,7 +30,7 @@ func (self *handler) Init(vars map[string]string) error {
 	var path string
 	var err error
 
-	if path, err = def.GetStrVar(vars, "path"); err != nil || len(path) == 0 {
+	if path, err = def.GetStrVar(vars, "path"); err != nil {
 		return err
 	}
 

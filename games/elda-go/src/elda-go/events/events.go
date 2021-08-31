@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strings"
 	"syscall"
 
 	"elda-go/action"
@@ -80,7 +81,14 @@ func process(srcMsg *def.ChanMsg, events []*Event) {
 		// send message to all actions
 		for _, ea := range ev.actions {
 
+			// replace regex submatches
 			data := ev.pattern.ReplaceAllString(srcMsg.Data, ea.data)
+
+			// replace escape sequences
+			data = strings.ReplaceAll(data, `\n`, "\n")
+			data = strings.ReplaceAll(data, `\r`, "\r")
+			data = strings.ReplaceAll(data, `\t`, "\t")
+			data = strings.ReplaceAll(data, `\\`, "\\")
 
 			actMsg := &def.ChanMsg{Name: srcMsg.Name, Data: data}
 
