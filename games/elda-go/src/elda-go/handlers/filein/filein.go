@@ -2,11 +2,10 @@ package filein
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"sync"
+	"time"
 
 	"github.com/nxadm/tail"
 	"github.com/radovskyb/watcher"
@@ -22,10 +21,13 @@ type handler struct {
 	typ  int
 
 	// optional
-	path    string
-	tail    *tail.Tail
+	files   []string
+	dir     string
+	mask    *regexp.Regexp
+	tailer  *tail.Tail
+	linesCh chan string
+	pathCh  chan string
 	watcher *watcher.Watcher
-	lock    sync.Mutex
 }
 
 // register us
@@ -37,15 +39,25 @@ func Register() *handler {
 }
 
 func (self *handler) Init(vars map[string]string) error {
-	var err error
-	var path string
 
-	if path, err = def.GetStrVar(vars, "path"); err != nil {
+	if dir, err := def.GetStrVar(vars, "dir"); err != nil {
+		return err
+	} else {
+		self.dir, _ = filepath.Abs(dir)
+		self.dir += "/"
+	}
+
+	if mask, err := def.GetStrVar(vars, "mask"); err != nil {
+		return err
+	} else if self.mask, err = regexp.Compile(mask); err != nil {
 		return err
 	}
 
+	self.linesCh = make(chan string, 32) // TODO adjust buf size here
+	self.pathCh = make(chan string, 1)
+
 	// start dir watcher
-	if err := self.watchDir(path); err != nil {
+	if err := self.watchDir(); err != nil {
 		return err
 	}
 
@@ -64,6 +76,14 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
+
+	select {
+	case line, ok := <-self.linesCh:
+		if ok {
+			return line, nil
+		}
+	}
+
 	return "", nil
 }
 
@@ -72,52 +92,90 @@ func (self *handler) Push(s string) error {
 }
 
 func (self *handler) Done() {
-	// stop watcher
+	// stop dir watcher
+	self.watcher.Close()
+
 	// stop tailer
+	self.tailer.Stop()
+	self.tailer.Cleanup()
+
+	close(self.linesCh)
+	close(self.pathCh)
 }
 
-func (self *handler) watchDir(path string) error {
-	var files []string
-
-	walkFunc := func(p string, i os.FileInfo, e error) error {
-		if e != nil {
-			return e
-		}
-		ok, err := regexp.MatchString(path, p)
-		if ok {
-			files = append(files, p)
-		}
-		return err
-	}
-	if err := filepath.Walk(filepath.Dir(path)+"/", walkFunc); err != nil {
-		return err
+func (self *handler) getRecentFile() string {
+	if len(self.files) > 0 {
+		sort.Strings(self.files)
+		return self.files[len(self.files)-1]
 	}
 
-	if len(files) > 0 {
-		sort.Strings(files)
-		self.path = files[len(files)-1]
-	}
+	return ""
+}
 
-	log.Debug("filein: tailing file '%v'\n", self.path)
+func (self *handler) watchDir() error {
+
+	// monitor the direcotory for newer file to appear
 
 	self.watcher = watcher.New()
-
 	self.watcher.FilterOps(watcher.Create)
+	self.watcher.AddFilterHook(watcher.RegexFilterHook(self.mask, false))
 
-	reg := regexp.MustCompile(path)
-	self.watcher.AddFilterHook(watcher.RegexFilterHook(reg, false))
+	if err := self.watcher.Add(self.dir); err != nil {
+		return err
+	}
 
-	// watch self.dir
+	for path, _ := range self.watcher.WatchedFiles() {
+		self.files = append(self.files, path)
+	}
 
-	// lock
+	if p := self.getRecentFile(); p != "" {
+		self.pathCh <- p
+	}
+
+	// start dir watcher
+	go func() {
+		for {
+			select {
+			case event := <-self.watcher.Event:
+				self.files = append(self.files, event.Path)
+				self.pathCh <- self.getRecentFile()
+			case err := <-self.watcher.Error:
+				log.Err("%v\n", err)
+			case <-self.watcher.Closed:
+				return
+			}
+		}
+	}()
+
+	go self.watcher.Start(time.Second * 1)
 
 	return nil
 }
 
 func (self *handler) tailFile() {
+	var err error
 
-	// tail(self.dir/self.file)
+	self.tailer, _ = tail.TailFile("/dev/null", tail.Config{ReOpen: true, Follow: true})
 
-	// if restart flag - restart tail on new file
+	for {
+		select {
+		case path, ok := <-self.pathCh:
+			if !ok {
+				break
+			}
+			log.Debug("tailing file '%s'\n", path)
+			self.tailer.Stop()
+			self.tailer.Cleanup()
+			self.tailer, err = tail.TailFile(path, tail.Config{ReOpen: true, Follow: true})
+			if err != nil {
+				log.Err("%v\n", err)
+			}
+		case line, ok := <-self.tailer.Lines:
+			if !ok {
+				continue
+			}
+			self.linesCh <- line.Text
+		}
+	}
 
 }

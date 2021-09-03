@@ -52,6 +52,7 @@ func main() {
 	for name, act := range cfg.Actions() {
 		if err := act.Init(); err != nil {
 			log.Err("failed to init action '%s': %v\n", name, err)
+			log.Err("action '%s' is disabled\n", name)
 		} else {
 			log.Info("starting action '%s'\n", name)
 			wg.Add(1)
@@ -64,6 +65,7 @@ func main() {
 	for name, src := range cfg.Sources() {
 		if err := src.Init(); err != nil {
 			log.Err("failed to init source '%s': %v\n", name, err)
+			log.Err("source '%s' is disabled\n", name)
 		} else {
 			log.Info("starting source '%s'\n", name)
 			wg.Add(1)
