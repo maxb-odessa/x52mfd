@@ -1,0 +1,13 @@
+
+PREFIX	=	@HOME@/.local
+
+GO111MODULE	=	auto
+GOBIN		=	${PREFIX}/bin
+
+all:
+	go build -o elda-go
+
+install:
+	go env -w GOBIN=${GOBIN}
+	go install
+	cp -f elda-go.conf ${PREFIX}/etc

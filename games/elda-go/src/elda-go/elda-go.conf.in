@@ -1,0 +1,104 @@
+#
+# simple elda config
+#
+# block must start with bare keyword
+# block data must start with blank
+#
+#              
+#
+
+source
+    handler stdin
+    name IN
+
+source
+    name JOURNAL
+    handler filein
+    var dir @HOME@/.ed/journal///
+    var mask ^Journal\.\d+\.\d+\.log$
+
+action
+    name XDOLOCAL
+    handler xdo            
+    var display :0.0          
+    var window edpad-text
+
+action
+    name LOG1
+    handler fileout
+    var path @HOME@/.ed/elda-go.log
+    var truncate yes
+    var create yes
+
+action
+    name OUT
+    handler stdout
+
+source
+    name TICK10S
+    handler ticker
+    var interval 10
+    var message tick 10 seconds
+
+source
+    name PIPE
+    handler pipein
+    var path /tmp/elda-go-out.pipe
+
+action
+    name PIPE
+    handler pipeout
+    var path /tmp/x52-in.pipe
+
+event
+    source JOURNAL "event":"FSSDiscoveryScan".+"BodyCount":([0-9]+), "NonBodyCount":([0-9]+),
+    action OUT bri mfd 0%
+    action OUT bri led 10%
+    action OUT mfd 3 "Signals: $1/$2"
+    action OUT update
+    action XDOLOCAL text SHUTDOWN, NO FSD\n
+    action LOG1 Bodies: $1, NonBodies: $2\n
+
+event
+    source TICK10S tick 10 seconds
+    action OUT clock local 24hr ddmmyy
+    action OUT update
+
+event
+    source JOURNAL "event":"FSDJump", "Taxi":false,
+    action OUT bri led 30%
+    action OUT bri mfd 30%
+    action OUT update
+
+event
+    source JOURNAL "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"(.+ .+) (.+)",.+"StarClass":"(\w)"
+    action OUT mfd 2 "$3,$2"
+    action OUT bri led 0%
+    action OUT bri mfd 5%
+    action OUT update
+
+event
+    source JOURNAL "event":"FSDTarget", "Name":"(.+ .+) (.+)", .+"StarClass":"(.+)", "RemainingJumpsInRoute":(\d+)
+    action OUT mfd 1 "~$3,$2 ($4)"
+    action OUT mfd 3 "Not Scanned"
+    action OUT update
+
+event
+    source JOURNAL "event":"Scan", .+"BodyName":"(.+) (.+-?)", "BodyID":0, .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+),
+    action OUT mfd 2 "$3($4),$2 ($5)"
+    action OUT update
+    action LOG1 \n-----------------------\nName: $1 $2\nClass: $3($4)\nDiscovered: $5\n
+
+event
+    source JOURNAL "event":"Scan", .+"BodyID":([1-9][0-9]*), .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+),
+    action LOG1 \ -> ID:$1, Class $2($3) (discovered: $4)\n
+
+event
+    source IN ^CONNECTED$
+    action OUT mfd 1 Hello, commander!
+    action OUT update
+
+event
+    source IN (a).+(z)
+    action OUT GOT \n\t$1 \\and $2 here\r
+

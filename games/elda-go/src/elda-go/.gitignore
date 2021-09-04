@@ -1,1 +1,4 @@
 elda-go
+!elda-go.conf.in
+!Makefile.in
+!x52mfd.service.in

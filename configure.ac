@@ -33,6 +33,7 @@ PKG_CHECK_MODULES([LIBX52IO], [libx52io >= 1.0.0], [], AC_MSG_ERROR([libx52io >=
 
 
 AC_CONFIG_SUBDIRS([games/elda])
+AC_CONFIG_SUBDIRS([games/elda-go/src/elda-go])
 
 AC_OUTPUT
 
