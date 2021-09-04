@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -78,11 +79,20 @@ func process(srcMsg *def.ChanMsg, events []*Event) {
 			continue
 		}
 
+		subs := ev.pattern.FindStringSubmatch(srcMsg.Data)
+		log.Debug("event match regex subs: <%v>\n", subs)
+
 		// send message to all actions
 		for _, ea := range ev.actions {
+			data := ea.data
 
 			// replace regex submatches
-			data := ev.pattern.ReplaceAllString(srcMsg.Data, ea.data)
+			for idx, sub := range subs {
+				if idx == 0 {
+					continue
+				}
+				data = strings.ReplaceAll(data, "$"+strconv.Itoa(idx), sub)
+			}
 
 			// replace escape sequences
 			data = strings.ReplaceAll(data, `\n`, "\n")

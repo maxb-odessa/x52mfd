@@ -76,9 +76,10 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
-
+	log.Debug("WAITING\n")
 	select {
 	case line, ok := <-self.linesCh:
+		log.Debug("SENDING <%s>\n", line)
 		if ok {
 			return line, nil
 		}
@@ -155,7 +156,8 @@ func (self *handler) watchDir() error {
 func (self *handler) tailFile() {
 	var err error
 
-	self.tailer, _ = tail.TailFile("/dev/null", tail.Config{ReOpen: true, Follow: true})
+	cfg := tail.Config{ReOpen: true, Follow: true, Poll: true}
+	self.tailer, _ = tail.TailFile("/dev/null", cfg)
 
 	for {
 		select {
@@ -166,9 +168,9 @@ func (self *handler) tailFile() {
 			log.Debug("tailing file '%s'\n", path)
 			self.tailer.Stop()
 			self.tailer.Cleanup()
-			self.tailer, err = tail.TailFile(path, tail.Config{ReOpen: true, Follow: true})
+			self.tailer, err = tail.TailFile(path, cfg)
 			if err != nil {
-				log.Err("%v\n", err)
+				log.Err("tailer: %v\n", err)
 			}
 		case line, ok := <-self.tailer.Lines:
 			if !ok {
