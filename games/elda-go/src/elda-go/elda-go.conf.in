@@ -14,7 +14,7 @@ source
 source
     name JOURNAL
     handler filein
-    var dir @HOME@/.ed/journal///
+    var dir @HOME@/.ed/journal/
     var mask ^Journal\.\d+\.\d+\.log$
 
 action
@@ -24,7 +24,7 @@ action
     var window edpad-text
 
 action
-    name LOG1
+    name LOG
     handler fileout
     var path @HOME@/.ed/elda-go.log
     var truncate yes
@@ -57,7 +57,7 @@ event
     action OUT mfd 3 "Signals: $1/$2"
     action OUT update
     action XDOLOCAL text SHUTDOWN, NO FSD\n
-    action LOG1 Bodies: $1, NonBodies: $2\n
+    action LOG Bodies: $1, NonBodies: $2\n
 
 event
     source TICK10S tick 10 seconds
@@ -84,21 +84,34 @@ event
     action OUT update
 
 event
-    source JOURNAL "event":"Scan", .+"BodyName":"(.+) (.+-?)", "BodyID":0, .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+),
-    action OUT mfd 2 "$3($4),$2 ($5)"
+    source JOURNAL "event":"Scan", "ScanType":"AutoScan", "BodyName":".+ .+ (.+-?) [aA]+",.+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+), "
+    action OUT mfd 2 "$2$3 $1,($4)"
     action OUT update
-    action LOG1 \n-----------------------\nName: $1 $2\nClass: $3($4)\nDiscovered: $5\n
+    action LOG \n-----------------------\nName: $1 $2\nClass: $3\nDiscovered: $4\n
 
 event
-    source JOURNAL "event":"Scan", .+"BodyID":([1-9][0-9]*), .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+),
-    action LOG1 \ -> ID:$1, Class $2($3) (discovered: $4)\n
+    source JOURNAL "event":"Scan", "ScanType":"AutoScan", "BodyName":".+ .+ (.+-?) [b-zB-Z]+", "BodyID":(\d+), .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+), "
+    action LOG | -> ID:$2, Class $3$4 (discovered: $5)\n
+
+event
+    source JOURNAL "event":"DockingGranted",
+    action OUT blink on
+    action OUT update
+
+event
+    source JOURNAL "event":"Docked",
+    action OUT blink off
+    action OUT update
 
 event
     source IN ^CONNECTED$
-    action OUT mfd 1 Hello, commander!
+    action OUT mfd 1 "Hello,"
+    action OUT mfd 2 "  commander"
+    action OUT mfd 3 "    Vessae!"
+    action OUT bri led 10% 
+    action OUT bri mfd 10%
+    action OUT blink off
+    action OUT clock local 24hr ddmmyy
     action OUT update
 
-event
-    source IN (a).+(z)
-    action OUT GOT \n\t$1 \\and $2 here\r
 

@@ -2,6 +2,7 @@ package pipein
 
 import (
 	"fmt"
+	"time"
 
 	"elda-go/def"
 )
@@ -36,6 +37,7 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
+	time.Sleep(time.Second * 1)
 	return "", nil
 }
 

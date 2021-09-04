@@ -28,5 +28,8 @@ x52mfd
 *.lo
 *~
 
+games/elda-go/bin
+games/elda-go/pkg
+
 !x52mfd.service.in
 !ed-odyssey.conf.in
