@@ -76,10 +76,9 @@ func (self *handler) Type() int {
 }
 
 func (self *handler) Pull() (string, error) {
-	log.Debug("WAITING\n")
+
 	select {
 	case line, ok := <-self.linesCh:
-		log.Debug("SENDING <%s>\n", line)
 		if ok {
 			return line, nil
 		}

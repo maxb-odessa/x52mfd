@@ -63,6 +63,7 @@ func (self *handler) Type() int {
 
 func (self *handler) Push(s string) error {
 	_, err := self.fp.WriteString(s)
+	self.fp.Sync()
 	return err
 }
 

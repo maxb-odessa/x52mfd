@@ -52,12 +52,9 @@ action
 
 event
     source JOURNAL "event":"FSSDiscoveryScan".+"BodyCount":([0-9]+), "NonBodyCount":([0-9]+),
-    action OUT bri mfd 0%
-    action OUT bri led 10%
     action OUT mfd 3 "Signals: $1/$2"
     action OUT update
-    action XDOLOCAL text SHUTDOWN, NO FSD\n
-    action LOG Bodies: $1, NonBodies: $2\n
+    action LOG | Signals:    $1/$2\n
 
 event
     source TICK10S tick 10 seconds
@@ -72,8 +69,8 @@ event
 
 event
     source JOURNAL "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"(.+ .+) (.+)",.+"StarClass":"(\w)"
-    action OUT mfd 2 "$3,$2"
-    action OUT bri led 0%
+    action OUT mfd 2 " $3,$2"
+    action OUT bri led 5%
     action OUT bri mfd 5%
     action OUT update
 
@@ -82,16 +79,21 @@ event
     action OUT mfd 1 "~$3,$2 ($4)"
     action OUT mfd 3 "Not Scanned"
     action OUT update
+    action LOG +-------------------------------\n\n
+    action LOG  Next: $3,$2, Jumps left: $4\n
 
 event
-    source JOURNAL "event":"Scan", "ScanType":"AutoScan", "BodyName":".+ .+ (.+-?) [aA]+",.+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+), "
-    action OUT mfd 2 "$2$3 $1,($4)"
+    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([0-9a-zA-Z- ]+)([a-zA-Z]\d-?\d*)(| [aA]+)", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
+    action OUT mfd 2 " $4,$2,$6"
     action OUT update
-    action LOG \n-----------------------\nName: $1 $2\nClass: $3\nDiscovered: $4\n
+    action LOG +-------------------------------\n
+    action LOG | Class:      $4$5\n
+    action LOG | Name:       $1 $2\n
+    action LOG | Discovered: $6\n
 
 event
-    source JOURNAL "event":"Scan", "ScanType":"AutoScan", "BodyName":".+ .+ (.+-?) [b-zB-Z]+", "BodyID":(\d+), .+"StarType":"(.+)", "Subclass":([0-9]+), .+"WasDiscovered":(.+), "
-    action LOG | -> ID:$2, Class $3$4 (discovered: $5)\n
+    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([0-9a-zA-Z- ]+)([a-zA-Z]\d-?\d*) [0-9b-zB-Z]+", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
+    action LOG |-> $3$4\n
 
 event
     source JOURNAL "event":"DockingGranted",
@@ -106,11 +108,16 @@ event
 event
     source IN ^CONNECTED$
     action OUT mfd 1 "Hello,"
-    action OUT mfd 2 "  commander"
-    action OUT mfd 3 "    Vessae!"
-    action OUT bri led 10% 
-    action OUT bri mfd 10%
+    action OUT mfd 2 " commander"
+    action OUT mfd 3 "  Vessae!"
+    action OUT bri led 30% 
+    action OUT bri mfd 30%
     action OUT blink off
+    action OUT led a red
+    action OUT led b red
+    action OUT led t1 green
+    action OUT led t2 green
+    action OUT led t3 green
     action OUT clock local 24hr ddmmyy
     action OUT update
 

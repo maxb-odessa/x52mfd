@@ -8,6 +8,7 @@
 Description = x52 joystick game support for Elite Dangerous
 
 [Service]
+Environment="ELDA_DEBUG=1"
 Type = simple
 StandardOutput = journal
 ExecStart = @HOME@/.local/bin/x52mfd elda-go
