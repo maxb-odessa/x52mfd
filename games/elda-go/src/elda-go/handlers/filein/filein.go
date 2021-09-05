@@ -2,6 +2,7 @@ package filein
 
 import (
 	"fmt"
+	"io"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -155,7 +156,14 @@ func (self *handler) watchDir() error {
 func (self *handler) tailFile() {
 	var err error
 
-	cfg := tail.Config{ReOpen: true, Follow: true, Poll: true}
+	cfg := tail.Config{
+		ReOpen: true,
+		Follow: true,
+		Poll:   true,
+		Location: &tail.SeekInfo{
+			Offset: 0,
+			Whence: io.SeekEnd},
+	}
 	self.tailer, _ = tail.TailFile("/dev/null", cfg)
 
 	for {
