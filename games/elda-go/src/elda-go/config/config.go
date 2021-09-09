@@ -105,8 +105,8 @@ func (self *Cfg) parseSource() (err error) {
 	for self.lineNo++; self.lineNo < self.confLen; self.lineNo++ {
 		line := self.confLines[self.lineNo]
 
-		// skip empty lines
-		if len(line) == 0 {
+		// skip empty lines and comments
+		if line2 := strings.TrimSpace(line); len(line2) == 0 || line2[0] == '#' {
 			continue
 		}
 
@@ -117,11 +117,7 @@ func (self *Cfg) parseSource() (err error) {
 			return
 		}
 
-		// skip comments
 		line = strings.TrimSpace(line)
-		if line[0] == '#' {
-			continue
-		}
 
 		// we expect "keyword key value..."
 		tokens := fieldsN(line, 3)
@@ -173,8 +169,8 @@ func (self *Cfg) parseAction() (err error) {
 	for self.lineNo++; self.lineNo < self.confLen; self.lineNo++ {
 		line := self.confLines[self.lineNo]
 
-		// skip empty lines
-		if len(line) == 0 {
+		// skip empty lines and comments
+		if line2 := strings.TrimSpace(line); len(line2) == 0 || line2[0] == '#' {
 			continue
 		}
 
@@ -185,11 +181,7 @@ func (self *Cfg) parseAction() (err error) {
 			return
 		}
 
-		// skip comments
 		line = strings.TrimSpace(line)
-		if line[0] == '#' {
-			continue
-		}
 
 		// we expect "keyword key value..."
 		tokens := fieldsN(line, 3)
@@ -240,8 +232,8 @@ func (self *Cfg) parseEvent() (err error) {
 	for self.lineNo++; self.lineNo < self.confLen; self.lineNo++ {
 		line := self.confLines[self.lineNo]
 
-		// skip empty lines
-		if len(line) == 0 {
+		// skip comments and empty lines
+		if line2 := strings.TrimSpace(line); len(line2) == 0 || line2[0] == '#' {
 			continue
 		}
 
@@ -252,11 +244,7 @@ func (self *Cfg) parseEvent() (err error) {
 			return
 		}
 
-		// skip comments
 		line = strings.TrimSpace(line)
-		if line[0] == '#' {
-			continue
-		}
 
 		// we expect "keyword key value..."
 		tokens := fieldsN(line, 3)

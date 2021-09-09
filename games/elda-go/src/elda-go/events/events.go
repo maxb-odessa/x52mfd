@@ -88,9 +88,6 @@ func process(srcMsg *def.ChanMsg, events []*Event) {
 
 			// replace regex submatches
 			for idx, sub := range subs {
-				if idx == 0 {
-					continue
-				}
 				data = strings.ReplaceAll(data, "$"+strconv.Itoa(idx), sub)
 			}
 

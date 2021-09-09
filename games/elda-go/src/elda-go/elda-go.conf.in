@@ -50,6 +50,35 @@ action
     handler pipeout
     var path /tmp/x52-in.pipe
 
+#action
+#    name IGAU
+#    handler igau
+#    var url https://igau.some.url.here
+#    var api_token 12345
+
+action
+    #is name
+    name EDSM
+    handler edsm
+    var url https://edsm.some.url.here
+ 
+    var api_token 12345
+
+source
+    name EDSM
+    handler edsm
+
+# $0 = whole match string, $1..$9 = submatches (if any)
+
+event
+    source IN .*
+#    action IGAU $0
+    action EDSM AAA $0
+
+event
+    source EDSM AAA .*
+    action OUT got from EDSM $0
+
 event
     source JOURNAL "event":"FSSDiscoveryScan".+"BodyCount":([0-9]+), "NonBodyCount":([0-9]+),
     action OUT mfd 3 "Signals: $1/$2"
@@ -68,32 +97,32 @@ event
     action OUT update
 
 event
-    source JOURNAL "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"(.+ .+) (.+)",.+"StarClass":"(\w)"
+    source JOURNAL "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*)",.+"StarClass":"(\w)"
     action OUT mfd 2 " $3,$2"
     action OUT bri led 5%
     action OUT bri mfd 5%
     action OUT update
 
 event
-    source JOURNAL "event":"FSDTarget", "Name":"(.+ .+) (.+)", .+"StarClass":"(.+)", "RemainingJumpsInRoute":(\d+)
+    source JOURNAL "event":"FSDTarget", "Name":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*)", .+"StarClass":"(.+)", "RemainingJumpsInRoute":(\d+)
     action OUT mfd 1 "~$3,$2 ($4)"
-    action OUT mfd 3 "Not Scanned"
+    action OUT mfd 3 "not scanned"
     action OUT update
-    action LOG +-------------------------------\n\n
-    action LOG  Next: $3,$2, Jumps left: $4\n
+    action LOG \n\n
+    action LOG  Next Jump Target: $3, $2, Jumps left: $4\n
 
 event
-    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([0-9a-zA-Z- ]+)([a-zA-Z]\d-?\d*)(| [aA]+)", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
+    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*)(| [aA]+)", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
     action OUT mfd 2 " $4,$2,$6"
     action OUT update
-    action LOG +-------------------------------\n
+    action LOG \n
     action LOG | Class:      $4$5\n
     action LOG | Name:       $1 $2\n
     action LOG | Discovered: $6\n
 
 event
-    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([0-9a-zA-Z- ]+)([a-zA-Z]\d-?\d*) [0-9b-zB-Z]+", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
-    action LOG |-> $3$4\n
+    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*) [0-9b-zB-Z]+", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
+    action LOG |-> Star: $3$4\n
 
 event
     source JOURNAL "event":"DockingGranted",
@@ -106,6 +135,26 @@ event
     action OUT update
 
 event
+    source JOURNAL "event":"SAASignalsFound", "BodyName":"(.+)", "SystemAddress":.+"Signals":\[.+"Guardian", "Count":(\d+)
+    action LOG |-> Body: $1, Guardian signals: $2\n
+
+event
+    source JOURNAL "event":"SAASignalsFound", "BodyName":"(.+)", "SystemAddress":.+"Signals":\[.+"Human", "Count":(\d+)
+    action LOG |-> Body: $1, Human signals: $2\n
+
+event
+    source JOURNAL "event":"FSSSignalDiscovered",.+"SignalName_Localised":\s?"Nonhuman signal source",
+    action LOG |-> NonHuman signal found\n
+
+event
+    source JOURNAL "event":"FSSSignalDiscovered",.+"SignalName_Localised":\s?"Notable stellar phenomena"
+    action LOG |-> Stellar Phenomena found\n
+
+event
+    source JOURNAL "event":"FSSSignalDiscovered",.+"SignalName_Localised":\s?"CAPITAL SHIP"
+    action LOG |-> Capital Ship detected\n
+
+event
     source IN ^CONNECTED$
     action OUT mfd 1 "Hello,"
     action OUT mfd 2 " commander"
@@ -115,9 +164,9 @@ event
     action OUT blink off
     action OUT led a red
     action OUT led b red
-    action OUT led t1 green
-    action OUT led t2 green
-    action OUT led t3 green
+    action OUT led t1 amber
+    action OUT led t2 amber
+    action OUT led t3 amber
     action OUT clock local 24hr ddmmyy
     action OUT update
 

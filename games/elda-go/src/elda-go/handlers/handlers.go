@@ -12,6 +12,9 @@ import (
 	"elda-go/handlers/pipeout"
 	"elda-go/handlers/stdout"
 	"elda-go/handlers/xdo"
+
+	"elda-go/handlers/edsm"
+	"elda-go/handlers/igau"
 )
 
 type Handler interface {
@@ -36,12 +39,15 @@ func init() {
 		pipeout.Register(),
 		stdout.Register(),
 		xdo.Register(),
+
+		edsm.Register(),
+		igau.Register(),
 	}
 }
 
 func Search(name string, htype int) Handler {
 	for _, h := range registeredHandlers {
-		if h.Name() == name && h.Type() == htype {
+		if h.Name() == name && (h.Type()&htype) > 0 {
 			return h
 		}
 	}

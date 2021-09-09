@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	SRC_CHAN_LEN = 32
-	ACT_CHAN_LEN = 64
+	SRC_CHAN_LEN = 128
+	ACT_CHAN_LEN = 128
 )
 
 const (
-	HANDLER_TYPE_SOURCE = 1
-	HANDLER_TYPE_ACTION = 2
+	HANDLER_TYPE_SOURCE = 0x01
+	HANDLER_TYPE_ACTION = 0x02
 )
 
 var ConfFile string
