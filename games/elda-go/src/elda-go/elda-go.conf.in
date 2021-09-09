@@ -50,18 +50,16 @@ action
     handler pipeout
     var path /tmp/x52-in.pipe
 
-#action
-#    name IGAU
-#    handler igau
-#    var url https://igau.some.url.here
-#    var api_token 12345
+action
+    name IGAU
+    handler igau
+    var url https://igau.some.url.here
+    var api_token 12345
 
 action
-    #is name
     name EDSM
     handler edsm
     var url https://edsm.some.url.here
- 
     var api_token 12345
 
 source
@@ -72,7 +70,7 @@ source
 
 event
     source IN .*
-#    action IGAU $0
+    action IGAU $0
     action EDSM AAA $0
 
 event
