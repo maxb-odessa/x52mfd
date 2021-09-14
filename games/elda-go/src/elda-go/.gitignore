@@ -1,8 +1,0 @@
-elda-go
-*.conf
-*.service
-
-../pkg
-../bin
-
-!*.in

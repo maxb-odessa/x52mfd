@@ -10,7 +10,8 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_PREFIX_DEFAULT([$HOME/.local])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-CFLAGS="-std=gnu11 -g -ggdb -O0 -Wall -Werror"
+#CFLAGS="-std=gnu11 -g -ggdb -O0 -Wall -Werror"
+CFLAGS="-std=gnu11 -Wall -Werror"
 
 # Checks for programs.
 AC_PROG_CC
@@ -31,9 +32,6 @@ AC_CHECK_HEADERS([pthread.h stdarg.h])
 PKG_CHECK_MODULES([LIBX52], [libx52 >= 1.0.0], [], AC_MSG_ERROR([libx52 >= 1.0.0 required (get it here: https://github.com/nirenjan/x52pro-linux.git)]))
 PKG_CHECK_MODULES([LIBX52IO], [libx52io >= 1.0.0], [], AC_MSG_ERROR([libx52io >= 1.0.0 required (get it here: https://github.com/nirenjan/x52pro-linux.git)]))
 
-
-#AC_CONFIG_SUBDIRS([games/elda])
-AC_CONFIG_SUBDIRS([games/elda-go/src/elda-go])
 
 AC_OUTPUT
 

@@ -3,8 +3,8 @@
 This is to control your Saitek x52(pro) joystick
 
 Exec a proggie and communicate with it via STDIN/STDOUT
-Read commands from proggie STDOUT and execute them.
-Write joystick events to proggie STDIN.
+Read joustick events from proggie's STDOUT and process them.
+Write joystick events to proggie's STDIN.
 
 Built on [libx52](https://github.com/nirenjan/x52pro-linux.git)
 
@@ -37,8 +37,8 @@ Commands are exactly the same as used by x52cli:
 
 ### Addition:
 
-    * proggie must send new command 'update' for prev commands to be applied
-    * commands and args (except text) are case insensitive
+    * calling proggie must send new command 'update' for prev commands to be applied
+    * commands and args (except mfd text) are case insensitive
     * brightness may be specified by value (0-128) or by percents (0-100%)
     * call to 'clock' command will set current time automatically
 
@@ -141,6 +141,6 @@ Button names could be found in __libx52__ sources plus I've made some other by m
 
 ### Addition:
 
-There are two 'buttons' which could be send to a proggie: 'CONNECTED' and 'DICONNECTED'
+There are two 'buttons' which could be send to a proggie: 'CONNECTED' and 'DISCONNECTED'
 indicating current joystick connection status. During disconnection no buttons will be sent and no
 led or mfd actions will be processed.
