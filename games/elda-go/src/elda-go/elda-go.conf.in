@@ -40,42 +40,58 @@ source
     var interval 10
     var message tick 10 seconds
 
-source
-    name PIPE
-    handler pipein
-    var path /tmp/elda-go-out.pipe
+#source
+#    name PIPE
+#    handler pipein
+#    var path /tmp/elda-go-out.pipe
+
+#action
+#    name PIPE
+#    handler pipeout
+#    var path /tmp/x52-in.pipe
+
+#action
+#    name IGAU
+#    handler igau
+#    var url https://igau.some.url.here
+#    var api_token 12345
 
 action
-    name PIPE
-    handler pipeout
-    var path /tmp/x52-in.pipe
-
-action
-    name IGAU
-    handler igau
-    var url https://igau.some.url.here
-    var api_token 12345
-
-action
-    name EDSM
+    name EDSM-POST-JOURNAL
     handler edsm
-    var url https://edsm.some.url.here
-    var api_token 12345
+    var url             https://www.edsm.net/api-journal-v1
+    var api_key         1111111 
+    var commander       me11111
+    var software_name   test
+    var software_ver    0.0.1
 
-source
-    name EDSM
-    handler edsm
+#source
+#    name EDSM-GET-BODIES
+#    handler edsm
+#    var url             https://www.edsm.net/api-system-v1/bodies
+
+
+
 
 # $0 = whole match string, $1..$9 = submatches (if any)
 
-event
-    source IN .*
-    action IGAU $0
-    action EDSM AAA $0
+#event
+#    source IN .*
+#    action IGAU $0
+#    action EDSM-SEND AAA $0
+
+
+
+# TEST!!
+# 
+#event
+#    source EDSM-GET-BODIES .+
+#    action OUT got from EDSM $0
+
 
 event
-    source EDSM AAA .*
-    action OUT got from EDSM $0
+    source JOURNAL "event":"(StartJump|FSDJump|FSDTarget|Scan|SAASignalsFound)",
+    action EDSM-POST-JOURNAL $0
 
 event
     source JOURNAL "event":"FSSDiscoveryScan".+"BodyCount":([0-9]+), "NonBodyCount":([0-9]+),
@@ -119,7 +135,7 @@ event
     action LOG | Discovered: $6\n
 
 event
-    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*) [0-9b-zB-Z]+", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
+    source JOURNAL "event":"Scan", "ScanType":".+", "BodyName":"([a-zA-Z -]+) ([a-zA-Z]{1}\d+-?\d*) [0-9b-zB-Z ]+", .+"StarType":"(\w+)", "Subclass":(\d+), .+"WasDiscovered":(\w+), "
     action LOG |-> Star: $3$4\n
 
 event
